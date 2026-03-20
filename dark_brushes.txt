@@ -1,0 +1,10 @@
+    <!-- Preview Panel Brushes -->
+    <SolidColorBrush x:Key=`PreviewBackgroundBrush` Color=`#FF1E1E1E`/>
+    <SolidColorBrush x:Key=`PreviewHeaderBrush` Color=`#FF2D2D2D`/>
+    <SolidColorBrush x:Key=`PreviewTextBrush` Color=`#FFD4D4D4`/>
+    <SolidColorBrush x:Key=`PreviewCodeKeywordBrush` Color=`#FF569CD6`/>
+    <SolidColorBrush x:Key=`PreviewCodeStringBrush` Color=`#FFCE9178`/>
+    <SolidColorBrush x:Key=`PreviewCodeCommentBrush` Color=`#FF6A9955`/>
+    <SolidColorBrush x:Key=`PreviewCodeNumberBrush` Color=`#FFB5CEA8`/>
+    <SolidColorBrush x:Key=`PreviewCodeKeyBrush` Color=`#FF9CDCFE`/>
+    <SolidColorBrush x:Key=`PreviewSecondaryTextBrush` Color=`#FF808080`/>
