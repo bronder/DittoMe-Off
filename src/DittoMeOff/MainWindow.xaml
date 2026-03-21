@@ -12,13 +12,14 @@
         Height="650"
         MinWidth="400" 
         MinHeight="500"
-        WindowStartupLocation="CenterScreen"
+        WindowStartupLocation="Manual"
         Background="{DynamicResource BackgroundBrush}"
         Foreground="{DynamicResource TextBrush}"
         FontFamily="Segoe UI Variable"
         Loaded="Window_Loaded"
         Closing="Window_Closing"
         StateChanged="Window_StateChanged"
+        SizeChanged="Window_SizeChanged"
         PreviewKeyDown="MainWindow_PreviewKeyDown"
         Focusable="True">
 
@@ -283,35 +284,70 @@
                                            Opacity="0.5"/>
                             </Grid>
                             
-                            <!-- Scope dropdown -->
+                            <!-- Modern Filter Dropdown -->
                             <ComboBox x:Name="FilterCombo"
-                                      Width="100"
+                                      Width="115"
                                       Margin="8,0,0,0"
-                                      FontSize="10"
-                                      Padding="6,4"
+                                      Padding="8,6"
+                                      FontSize="11"
+                                      FontWeight="Medium"
                                       SelectedIndex="0"
                                       SelectionChanged="FilterCombo_SelectionChanged">
+                                <ComboBox.ItemContainerStyle>
+                                    <Style TargetType="ComboBoxItem">
+                                        <Setter Property="Padding" Value="8,6"/>
+                                        <Setter Property="FontSize" Value="11"/>
+                                    </Style>
+                                </ComboBox.ItemContainerStyle>
                                 <ComboBoxItem Content="All" Tag=""/>
-                                <ComboBoxItem Content="Text" Tag="Text"/>
-                                <ComboBoxItem Content="Image" Tag="Image"/>
-                                <ComboBoxItem Content="JSON" Tag="Json"/>
-                                <ComboBoxItem Content="XML" Tag="Xml"/>
+                                <ComboBoxItem Content="CSS" Tag="Css"/>
                                 <ComboBoxItem Content="C#" Tag="CSharp"/>
-                                <ComboBoxItem Content="JS" Tag="JavaScript"/>
                                 <ComboBoxItem Content="HTML" Tag="Html"/>
-                                <ComboBoxItem Content="SQL" Tag="Sql"/>
+                                <ComboBoxItem Content="Image" Tag="Image"/>
+                                <ComboBoxItem Content="JS" Tag="JavaScript"/>
+                                <ComboBoxItem Content="JSON" Tag="Json"/>
+                                <ComboBoxItem Content="Markdown" Tag="Markdown"/>
                                 <ComboBoxItem Content="Python" Tag="Python"/>
+                                <ComboBoxItem Content="Shell" Tag="Shell"/>
+                                <ComboBoxItem Content="SQL" Tag="Sql"/>
+                                <ComboBoxItem Content="Text" Tag="Text"/>
+                                <ComboBoxItem Content="XML" Tag="Xml"/>
+                                <ComboBoxItem Content="YAML" Tag="Yaml"/>
                             </ComboBox>
                             
-                            <Button Content="⚙️ Settings" 
-                                    FontSize="10" 
-                                    Padding="8,4"
+                            <!-- Settings Button - matches settings page style -->
+                            <Button Command="{Binding OpenSettingsCommand}"
+                                    Content="⚙ Settings"
                                     Margin="8,0,0,0"
-                                    Background="Transparent"
-                                    BorderThickness="1"
-                                    BorderBrush="{DynamicResource BorderBrush}"
-                                    Cursor="Hand"
-                                    Command="{Binding OpenSettingsCommand}"/>
+                                    Cursor="Hand">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="Padding" Value="14,8"/>
+                                        <Setter Property="FontSize" Value="11"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="border"
+                                                            Background="{TemplateBinding Background}"
+                                                            CornerRadius="6"
+                                                            Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="border" Property="Opacity" Value="0.9"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
                         </StackPanel>
                     </DockPanel>
                 </Border>

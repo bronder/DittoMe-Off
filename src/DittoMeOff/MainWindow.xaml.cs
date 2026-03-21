@@ -1,6 +1,7 @@
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -17,6 +18,13 @@ public partial class MainWindow : Window
     private HotkeyService? _hotkeyService;
     private ConfigService? _configService;
     private bool _isExiting;
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+    private static readonly IntPtr HWND_TOP = IntPtr.Zero;
+    private const uint SWP_NOZORDER = 0x0004;
+    private const uint SWP_SHOWWINDOW = 0x0040;
 
     public MainWindow()
     {
@@ -237,12 +245,136 @@ public partial class MainWindow : Window
         }
     }
 
+    private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        // Save size when window is resized
+        if (_configService != null && WindowState == WindowState.Normal)
+        {
+            _configService.UpdateConfig(config =>
+            {
+                config.WindowWidth = Width;
+                config.WindowHeight = Height;
+            });
+        }
+    }
+
     private void ShowWindow()
     {
-        Show();
+        // Reset window state before showing
         WindowState = WindowState.Normal;
+        
+        // Force manual positioning - must be set before Show()
+        WindowStartupLocation = WindowStartupLocation.Manual;
+        
+        // Get cursor position
+        var cursorPos = System.Windows.Forms.Cursor.Position;
+        
+        // Position window before showing
+        Left = cursorPos.X;
+        Top = cursorPos.Y;
+        
+        // Adjust if window would be off-screen
+        EnsureWindowOnScreen();
+        
+        Show();
+        
+        // Use SetWindowPos to force the position AND size after show
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            var hwnd = new WindowInteropHelper(this).Handle;
+            if (hwnd != IntPtr.Zero)
+            {
+                // Get current config values to ensure we're using the right size
+                var config = _configService?.Config;
+                int width = config != null && config.WindowWidth > 0 ? (int)config.WindowWidth : (int)Width;
+                int height = config != null && config.WindowHeight > 0 ? (int)config.WindowHeight : (int)Height;
+                
+                SetWindowPos(hwnd, HWND_TOP, (int)Left, (int)Top, width, height, SWP_NOZORDER | SWP_SHOWWINDOW);
+                
+                // Also update WPF properties to match
+                Width = width;
+                Height = height;
+            }
+        }), System.Windows.Threading.DispatcherPriority.Background);
+        
         Activate();
         ClipboardListView.Focus();
+    }
+    
+    private void EnsureWindowOnScreen()
+    {
+        // Get the screen containing the window's top-left corner
+        var windowRect = new Rect(Left, Top, Width, Height);
+        
+        // Get working area of the screen containing the window
+        var screenBounds = GetScreenWorkingArea((int)Left, (int)Top);
+        
+        // Adjust Left if window extends beyond right edge
+        if (Left + Width > screenBounds.Right)
+        {
+            Left = screenBounds.Right - Width;
+        }
+        
+        // Adjust Top if window extends beyond bottom edge
+        if (Top + Height > screenBounds.Bottom)
+        {
+            Top = screenBounds.Bottom - Height;
+        }
+        
+        // Adjust Left if window extends beyond left edge
+        if (Left < screenBounds.Left)
+        {
+            Left = screenBounds.Left;
+        }
+        
+        // Adjust Top if window extends beyond top edge
+        if (Top < screenBounds.Top)
+        {
+            Top = screenBounds.Top;
+        }
+    }
+
+    private void PositionWindowCenterScreen()
+    {
+        try
+        {
+            // Get cursor position to determine which screen to use
+            var cursorPos = System.Windows.Forms.Cursor.Position;
+            var screenBounds = GetScreenWorkingArea(cursorPos.X, cursorPos.Y);
+            Left = (screenBounds.Width - Width) / 2 + screenBounds.Left;
+            Top = (screenBounds.Height - Height) / 2 + screenBounds.Top;
+        }
+        catch
+        {
+            // Fallback: use WPF's built-in centering (set Left/Top to NaN)
+            Left = double.NaN;
+            Top = double.NaN;
+            WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        }
+    }
+
+    private Rect GetScreenWorkingArea(int x, int y)
+    {
+        // Find which screen contains the point
+        var screens = System.Windows.Forms.Screen.AllScreens;
+        var targetScreen = System.Windows.Forms.Screen.PrimaryScreen;
+        
+        foreach (var screen in screens)
+        {
+            var rect = screen.WorkingArea;
+            if (x >= rect.Left && x < rect.Right && y >= rect.Top && y < rect.Bottom)
+            {
+                targetScreen = screen;
+                break;
+            }
+        }
+        
+        // Return the working area of the screen (excludes taskbar)
+        return new Rect(
+            targetScreen!.WorkingArea.Left,
+            targetScreen.WorkingArea.Top,
+            targetScreen.WorkingArea.Width,
+            targetScreen.WorkingArea.Height);
     }
 
     private void ShowWindow_Click(object sender, RoutedEventArgs e)
@@ -323,8 +455,7 @@ public partial class MainWindow : Window
         {
             _configService.UpdateConfig(config =>
             {
-                config.WindowLeft = Left;
-                config.WindowTop = Top;
+                // Don't save window position - always show at cursor
                 config.WindowWidth = Width;
                 config.WindowHeight = Height;
             });

@@ -357,11 +357,15 @@ public partial class MainViewModel : ObservableObject
                 "Image" => items.Where(i => i.ContentType == ContentType.Image).ToList(),
                 "Json" => items.Where(i => i.FormatType == ContentFormatType.Json).ToList(),
                 "Xml" => items.Where(i => i.FormatType == ContentFormatType.Xml).ToList(),
+                "Yaml" => items.Where(i => i.FormatType == ContentFormatType.Yaml).ToList(),
+                "Markdown" => items.Where(i => i.FormatType == ContentFormatType.Markdown).ToList(),
                 "Html" => items.Where(i => i.FormatType == ContentFormatType.Html || i.FormatType == ContentFormatType.HtmlCode).ToList(),
+                "Css" => items.Where(i => i.FormatType == ContentFormatType.Css).ToList(),
                 "CSharp" => items.Where(i => i.FormatType == ContentFormatType.CSharp).ToList(),
                 "JavaScript" => items.Where(i => i.FormatType == ContentFormatType.JavaScript).ToList(),
                 "Sql" => items.Where(i => i.FormatType == ContentFormatType.Sql).ToList(),
                 "Python" => items.Where(i => i.FormatType == ContentFormatType.Python).ToList(),
+                "Shell" => items.Where(i => i.FormatType == ContentFormatType.Bash || i.FormatType == ContentFormatType.PowerShell).ToList(),
                 _ => items
             };
         }

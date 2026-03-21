@@ -83,3 +83,8 @@ $Fody$
 
 # AssemblyInfo
 AssemblyInfo.cs
+
+# Release builds / packages
+*.zip
+*.rar
+*.7z
