@@ -2,7 +2,11 @@
 
 ## What's New
 
-_(Add your release notes here)_
+### Theme Text Color Fixes
+- **Fixed ListView text color** - ListView items now properly use theme's TextBrush instead of defaulting to black
+- **Fixed ComboBox text color** - ComboBox controls now properly use theme's TextBrush for dropdown items
+- **Fixed TextBox text color** - Search box and Hotkey input fields now properly use theme's TextBrush
+- **Organized theme selection** - Themes in Settings are now grouped by Dark and Light categories for easier browsing
 
 ---
 

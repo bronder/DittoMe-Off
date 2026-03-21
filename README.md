@@ -11,7 +11,7 @@ A lightweight clipboard manager for Windows with multi-format syntax highlightin
 - **Cursor Positioning** - Window appears at cursor position with off-screen detection
 - **Search & Filter** - Find content quickly with real-time search and content type filtering
 - **Pin Items** - Keep important items from being automatically deleted
-- **Multiple Themes** - Choose from 16 beautiful themes including Dracula, Nord, Monokai, Tokyo Night, and more
+- **Multiple Themes** - Choose from 16 beautiful themes including Dracula, Nord, Monokai, Tokyo Night, and more, organized by Dark and Light categories
 - **System Tray** - Runs quietly in the system tray
 - **Auto-start** - Option to launch with Windows
 

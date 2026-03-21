@@ -352,6 +352,7 @@
                                          Background="{DynamicResource BackgroundBrush}"
                                          BorderThickness="1"
                                          BorderBrush="{DynamicResource BorderBrush}"
+                                         Foreground="{DynamicResource TextBrush}"
                                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}">
                                     <TextBox.Template>
                                         <ControlTemplate TargetType="TextBox">
@@ -388,6 +389,7 @@
                                     <Style TargetType="ComboBoxItem">
                                         <Setter Property="Padding" Value="8,6"/>
                                         <Setter Property="FontSize" Value="11"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                                     </Style>
                                 </ComboBox.ItemContainerStyle>
                                 <ComboBoxItem Content="All" Tag=""/>
@@ -470,6 +472,7 @@
                                 <Setter Property="Padding" Value="4,3"/>
                                 <Setter Property="Margin" Value="0"/>
                                 <Setter Property="MinHeight" Value="36"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                             </Style>
                         </ListView.ItemContainerStyle>
                     </ListView>
@@ -786,40 +789,22 @@
                                                          GroupName="Theme"
                                                          IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumBoolConverter}, ConverterParameter=CatppuccinLatte}"
                                                          Margin="0,0,6,6"/>
+                                            
+                                            <!-- Dark Themes -->
                                             <RadioButton Content="Dark" 
                                                          Style="{StaticResource ThemeButton}"
                                                          GroupName="Theme"
                                                          IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumBoolConverter}, ConverterParameter=Dark}"
-                                                         Margin="0,0,6,6"/>
-                                            <RadioButton Content="Daylight" 
-                                                         Style="{StaticResource ThemeButton}"
-                                                         GroupName="Theme"
-                                                         IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumBoolConverter}, ConverterParameter=Daylight}"
                                                          Margin="0,0,6,6"/>
                                             <RadioButton Content="Dracula" 
                                                          Style="{StaticResource ThemeButton}"
                                                          GroupName="Theme"
                                                          IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumBoolConverter}, ConverterParameter=Dracula}"
                                                          Margin="0,0,6,6"/>
-                                            <RadioButton Content="Everforest" 
-                                                         Style="{StaticResource ThemeButton}"
-                                                         GroupName="Theme"
-                                                         IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumBoolConverter}, ConverterParameter=EverforestLight}"
-                                                         Margin="0,0,6,6"/>
-                                            <RadioButton Content="GitHub" 
-                                                         Style="{StaticResource ThemeButton}"
-                                                         GroupName="Theme"
-                                                         IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumBoolConverter}, ConverterParameter=GitHubLight}"
-                                                         Margin="0,0,6,6"/>
                                             <RadioButton Content="Gruvbox" 
                                                          Style="{StaticResource ThemeButton}"
                                                          GroupName="Theme"
                                                          IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumBoolConverter}, ConverterParameter=Gruvbox}"
-                                                         Margin="0,0,6,6"/>
-                                            <RadioButton Content="Light" 
-                                                         Style="{StaticResource ThemeButton}"
-                                                         GroupName="Theme"
-                                                         IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumBoolConverter}, ConverterParameter=Light}"
                                                          Margin="0,0,6,6"/>
                                             <RadioButton Content="Monokai" 
                                                          Style="{StaticResource ThemeButton}"
@@ -836,16 +821,6 @@
                                                          GroupName="Theme"
                                                          IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumBoolConverter}, ConverterParameter=Nord}"
                                                          Margin="0,0,6,6"/>
-                                            <RadioButton Content="One Light" 
-                                                         Style="{StaticResource ThemeButton}"
-                                                         GroupName="Theme"
-                                                         IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumBoolConverter}, ConverterParameter=OneLight}"
-                                                         Margin="0,0,6,6"/>
-                                            <RadioButton Content="Solarized" 
-                                                         Style="{StaticResource ThemeButton}"
-                                                         GroupName="Theme"
-                                                         IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumBoolConverter}, ConverterParameter=SolarizedLight}"
-                                                         Margin="0,0,6,6"/>
                                             <RadioButton Content="Synthwave" 
                                                          Style="{StaticResource ThemeButton}"
                                                          GroupName="Theme"
@@ -855,6 +830,38 @@
                                                          Style="{StaticResource ThemeButton}"
                                                          GroupName="Theme"
                                                          IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumBoolConverter}, ConverterParameter=TokyoNight}"
+                                                         Margin="0,0,6,6"/>
+                                            
+                                            <!-- Light Themes -->
+                                            <RadioButton Content="Daylight" 
+                                                         Style="{StaticResource ThemeButton}"
+                                                         GroupName="Theme"
+                                                         IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumBoolConverter}, ConverterParameter=Daylight}"
+                                                         Margin="0,0,6,6"/>
+                                            <RadioButton Content="Everforest" 
+                                                         Style="{StaticResource ThemeButton}"
+                                                         GroupName="Theme"
+                                                         IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumBoolConverter}, ConverterParameter=EverforestLight}"
+                                                         Margin="0,0,6,6"/>
+                                            <RadioButton Content="GitHub" 
+                                                         Style="{StaticResource ThemeButton}"
+                                                         GroupName="Theme"
+                                                         IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumBoolConverter}, ConverterParameter=GitHubLight}"
+                                                         Margin="0,0,6,6"/>
+                                            <RadioButton Content="Light" 
+                                                         Style="{StaticResource ThemeButton}"
+                                                         GroupName="Theme"
+                                                         IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumBoolConverter}, ConverterParameter=Light}"
+                                                         Margin="0,0,6,6"/>
+                                            <RadioButton Content="One Light" 
+                                                         Style="{StaticResource ThemeButton}"
+                                                         GroupName="Theme"
+                                                         IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumBoolConverter}, ConverterParameter=OneLight}"
+                                                         Margin="0,0,6,6"/>
+                                            <RadioButton Content="Solarized" 
+                                                         Style="{StaticResource ThemeButton}"
+                                                         GroupName="Theme"
+                                                         IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumBoolConverter}, ConverterParameter=SolarizedLight}"
                                                          Margin="0,0,6,6"/>
                                         </WrapPanel>
                                         
@@ -890,6 +897,7 @@
                                                      Background="{DynamicResource BackgroundBrush}"
                                                      BorderThickness="1"
                                                      BorderBrush="{DynamicResource BorderBrush}"
+                                                     Foreground="{DynamicResource TextBrush}"
                                                      PreviewKeyDown="HotkeyTextBox_PreviewKeyDown"
                                                      GotFocus="HotkeyTextBox_GotFocus"
                                                      LostFocus="HotkeyTextBox_LostFocus">
