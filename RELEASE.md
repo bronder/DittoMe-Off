@@ -1,8 +1,25 @@
-# Release v1.0.0
-
-Initial release of DittoMeOff - a lightweight clipboard manager for Windows.
+# Release v1.1.0
 
 ## What's New
+
+### Window Positioning
+- Window now appears at cursor position when hotkey is pressed
+- Automatic off-screen detection - position is adjusted if window would extend beyond screen edges
+
+### UI Improvements
+- **Frameless window** with custom title bar and window controls (minimize, maximize, close)
+- **Content type filter dropdown** - filter by format (CSS, C#, HTML, Image, JS, JSON, Markdown, Python, Shell, SQL, Text, XML, YAML)
+- **Window border** for better visibility against light backgrounds
+- Styled settings button matching the settings page design
+
+### Git Ignore
+- Added *.zip, *.rar, *.7z to ignore list
+
+---
+
+## Previous Release (v1.0.0)
+
+Initial release of DittoMeOff - a lightweight clipboard manager for Windows.
 
 ### Core Features
 - **Clipboard History** - Automatically captures and stores clipboard content
@@ -31,10 +48,6 @@ Extract the zip and run `DittoMeOff.exe`. Requires .NET 10.0 Runtime.
 - Windows 10 or later
 - .NET 10.0 Runtime
 
-## Known Issues
-
-None reported.
-
 ## Keyboard Shortcuts
 
 | Shortcut | Action |
@@ -44,13 +57,6 @@ None reported.
 | Ctrl+F | Search |
 | Esc | Clear search / Hide |
 | Ctrl+, | Settings |
-
-## Next Steps (Planned)
-
-- Import/Export functionality
-- Custom hotkey for quick paste
-- Favorites system
-- Sync across devices
 
 ---
 

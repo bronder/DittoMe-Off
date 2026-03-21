@@ -5,10 +5,11 @@ A lightweight clipboard manager for Windows with multi-format syntax highlightin
 ## Features
 
 - **Clipboard History** - Automatically captures and stores clipboard content
-- **Format Detection** - Automatically detects and highlights JSON, XML, HTML, C#, JavaScript, Python, SQL and more
+- **Format Detection** - Automatically detects and highlights JSON, XML, HTML, C#, JavaScript, Python, SQL, CSS, Markdown, Shell and more
 - **Code Syntax Highlighting** - Beautiful syntax highlighting for code snippets
 - **Global Hotkey** - Toggle visibility with a custom keyboard shortcut
-- **Search & Filter** - Find content quickly with real-time search highlighting
+- **Cursor Positioning** - Window appears at cursor position with off-screen detection
+- **Search & Filter** - Find content quickly with real-time search and content type filtering
 - **Pin Items** - Keep important items from being automatically deleted
 - **Multiple Themes** - Choose from 16 beautiful themes including Dracula, Nord, Monokai, Tokyo Night, and more
 - **System Tray** - Runs quietly in the system tray
