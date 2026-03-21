@@ -1,5 +1,6 @@
 using System.IO;
 using System.Windows.Media.Imaging;
+using DittoMeOff.Services;
 
 namespace DittoMeOff.Models;
 
@@ -88,9 +89,9 @@ public class ClipboardItem
     public bool HasFormatBadge => FormatType != ContentFormatType.PlainText && 
                                    (ContentType == ContentType.Text || ContentType == ContentType.Html);
     
-    public string FormatBadgeText => Services.ContentFormatDetector.GetFormatDisplayName(FormatType);
+    public string FormatBadgeText => ContentFormatDetector.GetFormatDisplayName(FormatType);
     
-    public string FormatBadgeIcon => Services.ContentFormatDetector.GetFormatIcon(FormatType);
+    public string FormatBadgeIcon => ContentFormatDetector.GetFormatIcon(FormatType);
     
     // Size display formatting
     public string SizeDisplay

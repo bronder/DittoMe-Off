@@ -7,7 +7,7 @@
         xmlns:converters="clr-namespace:DittoMeOff.Converters"
         xmlns:tb="http://www.hardcodet.net/taskbar"
         mc:Ignorable="d"
-        Title="DittoMeOff"
+        Title="DittoMe-Off"
         Width="480" 
         Height="650"
         MinWidth="400" 
@@ -255,7 +255,7 @@
                     <!-- App Icon and Title -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
                         <TextBlock Text="📋" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <TextBlock Text="DittoMeOff" 
+                        <TextBlock Text="DittoMe-Off" 
                                    FontSize="12" 
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextBrush}"
@@ -313,7 +313,7 @@
                 
                 <!-- System Tray Icon -->
                 <tb:TaskbarIcon x:Name="TrayIcon"
-                                ToolTipText="DittoMeOff"
+                                ToolTipText="DittoMe-Off"
                                 DoubleClickCommand="{Binding ToggleWindowCommand}">
                     <tb:TaskbarIcon.ContextMenu>
                         <ContextMenu Style="{DynamicResource DarkContextMenuStyle}">
@@ -747,7 +747,7 @@
                                                                FontWeight="SemiBold"
                                                                VerticalAlignment="Center"/>
                                                 </StackPanel>
-                                                <TextBlock Text="Launch DittoMeOff when Windows starts"
+                                                <TextBlock Text="Launch DittoMe-Off when Windows starts"
                                                            Foreground="{DynamicResource SecondaryTextBrush}"
                                                            FontSize="12"
                                                            Margin="24,4,0,0"/>

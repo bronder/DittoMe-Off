@@ -1,4 +1,4 @@
-# DittoMeOff Build Script
+# DittoMe-Off Build Script
 # Usage: .\build.ps1
 
 param(
@@ -9,13 +9,13 @@ param(
 $ErrorActionPreference = "Stop"
 
 $projectDir = $PSScriptRoot
-$srcDir = Join-Path $projectDir "src\DittoMeOff"
+$srcDir = Join-Path $projectDir "src\DittoMe-Off"
 $outputDir = Join-Path $projectDir "output"
 $publishDir = Join-Path $srcDir "bin\$Configuration\net10.0-windows\publish"
-$zipName = "DittoMeOff-v$Version-win-x64.zip"
+$zipName = "DittoMe-Off-v$Version-win-x64.zip"
 $zipPath = Join-Path $projectDir $zipName
 
-Write-Host "Building DittoMeOff v$Version..." -ForegroundColor Cyan
+Write-Host "Building DittoMe-Off v$Version..." -ForegroundColor Cyan
 
 # Clean output directory
 if (Test-Path $outputDir) {
@@ -85,7 +85,7 @@ if (-not $skipRelease) {
     
     # Create GitHub release (not draft - publishes immediately)
     gh release create "v$Version" `
-        --title "DittoMeOff v$Version" `
+        --title "DittoMe-Off v$Version" `
         --notes-file "$projectDir\RELEASE.md" `
         "$zipPath"
     
@@ -101,7 +101,7 @@ if (-not $skipRelease) {
 
 Write-Host ""
 Write-Host "Build complete!" -ForegroundColor Green
-Write-Host "  Executable: $publishDir\DittoMeOff.exe"
+Write-Host "  Executable: $publishDir\DittoMe-Off.exe"
 Write-Host "  Zip archive: $zipPath"
 Write-Host "  Output dir: $outputDir"
 if (-not $skipRelease) {

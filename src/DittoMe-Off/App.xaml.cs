@@ -66,12 +66,12 @@ public partial class App : Application
                     var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
                     if (!string.IsNullOrEmpty(exePath))
                     {
-                        key.SetValue("DittoMeOff", $"\"{exePath}\"");
+                        key.SetValue("DittoMe-Off", $"\"{exePath}\"");
                     }
                 }
                 else
                 {
-                    key.DeleteValue("DittoMeOff", false);
+                    key.DeleteValue("DittoMe-Off", false);
                 }
             }
         }

@@ -1,4 +1,4 @@
-# Clipboard Manager Application - DittoMeOff
+# Clipboard Manager Application - DittoMe-Off
 
 ## Project Overview
 A Windows clipboard manager application that keeps a history of clipboard contents, is user-configurable, supports global hotkeys, and provides a UI to browse and manage clipboard history.

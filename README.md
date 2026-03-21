@@ -1,4 +1,4 @@
-# DittoMeOff
+# DittoMe-Off
 
 A lightweight clipboard manager for Windows with multi-format syntax highlighting, themes, and global hotkey support.
 
@@ -22,16 +22,16 @@ A lightweight clipboard manager for Windows with multi-format syntax highlightin
 ## Installation
 
 ### Download
-Download the latest release from the [Releases page](https://github.com/bronder/dittoMeOff/releases).
+Download the latest release from the [Releases page](https://github.com/bronder/DittoMe-Off/releases).
 
 ### Build from Source
 ```bash
-git clone https://github.com/bronder/dittoMeOff.git
-cd dittoMeOff
+git clone https://github.com/bronder/DittoMe-Off.git
+cd DittoMe-Off
 dotnet build -c Release
 ```
 
-The executable will be in `src/DittoMeOff/bin/Release/net10.0-windows/`
+The executable will be in `src/DittoMe-Off/bin/Release/net10.0-windows/`
 
 ## Usage
 
@@ -49,7 +49,7 @@ Access settings via File > Settings or the ⚙️ button:
 
 ## Configuration
 
-Settings are stored in `%APPDATA%/DittoMeOff/`
+Settings are stored in `%APPDATA%/DittoMe-Off/`
 
 ## Keyboard Shortcuts
 

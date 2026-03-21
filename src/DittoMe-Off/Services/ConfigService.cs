@@ -15,7 +15,7 @@ public class ConfigService
     {
         var appDataPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "DittoMeOff"
+            "DittoMe-Off"
         );
         
         Directory.CreateDirectory(appDataPath);

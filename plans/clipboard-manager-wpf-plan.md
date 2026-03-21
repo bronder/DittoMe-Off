@@ -1,5 +1,5 @@
 # Clipboard Manager Application - WPF Implementation Plan
-## DittoMeOff - Windows Native Clipboard Manager
+## DittoMe-Off - Windows Native Clipboard Manager
 
 ---
 

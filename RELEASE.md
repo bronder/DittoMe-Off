@@ -23,7 +23,7 @@
 
 ## Previous Release (v1.0.0)
 
-Initial release of DittoMeOff - a lightweight clipboard manager for Windows.
+Initial release of DittoMe-Off - a lightweight clipboard manager for Windows.
 
 ### Core Features
 - **Clipboard History** - Automatically captures and stores clipboard content
@@ -45,7 +45,7 @@ Initial release of DittoMeOff - a lightweight clipboard manager for Windows.
 
 ## Installation
 
-Extract the zip and run `DittoMeOff.exe`. Requires .NET 10.0 Runtime.
+Extract the zip and run `DittoMe-Off.exe`. Requires .NET 10.0 Runtime.
 
 ## Requirements
 
@@ -64,4 +64,4 @@ Extract the zip and run `DittoMeOff.exe`. Requires .NET 10.0 Runtime.
 
 ---
 
-**Full Changelog**: https://github.com/bronder/dittoMeOff/commits
+**Full Changelog**: https://github.com/bronder/DittoMe-Off/commits
