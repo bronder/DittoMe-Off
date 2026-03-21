@@ -13,9 +13,10 @@
         MinWidth="400" 
         MinHeight="500"
         WindowStartupLocation="Manual"
-        Background="{DynamicResource BackgroundBrush}"
-        Foreground="{DynamicResource TextBrush}"
-        FontFamily="Segoe UI Variable"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="CanResizeWithGrip"
         Loaded="Window_Loaded"
         Closing="Window_Closing"
         StateChanged="Window_StateChanged"
@@ -201,24 +202,69 @@
         </Style>
     </Window.Resources>
 
-    <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="8">
+    <Border Background="{DynamicResource BackgroundBrush}" 
+            CornerRadius="8"
+            BorderBrush="{DynamicResource AccentBrush}"
+            BorderThickness="1">
         <DockPanel>
-            <!-- Menu Bar at Top -->
-            <Menu DockPanel.Dock="Top" 
-                  Background="Transparent" 
-                  Foreground="{DynamicResource TextBrush}" 
-                  Padding="12,8"
-                  BorderThickness="0">
-                <MenuItem Header="File">
-                    <MenuItem Header="Settings..."
-                              Command="{Binding OpenSettingsCommand}"
-                              InputGestureText="Ctrl+,"/>
-                    <Separator/>
-                    <MenuItem Header="Exit"
-                              Click="Exit_Click"
-                              InputGestureText="Alt+F4"/>
-                </MenuItem>
-            </Menu>
+            <!-- Custom Title Bar -->
+            <Border DockPanel.Dock="Top" 
+                    Height="32" 
+                    Background="{DynamicResource HeaderBrush}"
+                    MouseLeftButtonDown="TitleBar_MouseLeftButtonDown"
+                    CornerRadius="8,8,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- App Icon and Title -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
+                        <TextBlock Text="📋" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="DittoMeOff" 
+                                   FontSize="12" 
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextBrush}"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                    
+                    <!-- Window Control Buttons -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                        <!-- Minimize -->
+                        <Button x:Name="MinimizeButton"
+                                x:FieldModifier="public"
+                                Width="46" Height="32"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Click="MinimizeButton_Click"
+                                Cursor="Hand">
+                            <TextBlock Text="─" FontSize="10" Foreground="{DynamicResource TextBrush}"/>
+                        </Button>
+                        <!-- Maximize/Restore -->
+                        <Button x:Name="MaximizeButton"
+                                x:FieldModifier="public"
+                                Width="46" Height="32"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Click="MaximizeButton_Click"
+                                Cursor="Hand">
+                            <TextBlock Text="□" FontSize="10" Foreground="{DynamicResource TextBrush}"/>
+                        </Button>
+                        <!-- Close -->
+                        <Button x:Name="CloseButton"
+                                x:FieldModifier="public"
+                                Width="46" Height="32"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Click="CloseButton_Click"
+                                Cursor="Hand">
+                            <TextBlock Text="✕" FontSize="10" Foreground="{DynamicResource TextBrush}"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
 
             <!-- Main Content Grid - 2-column layout: list | preview -->
             <Grid x:Name="MainContent" Margin="4,4,4,0">

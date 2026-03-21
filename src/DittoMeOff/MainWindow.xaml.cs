@@ -612,4 +612,54 @@ public partial class MainWindow : Window
             ClearHistoryCombo.SelectedIndex = 0;
         }
     }
+
+    // Custom title bar event handlers
+    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount == 2)
+        {
+            // Double-click to maximize/restore
+            MaximizeButton_Click(sender, e);
+        }
+        else
+        {
+            // Drag the window
+            if (WindowState == WindowState.Maximized)
+            {
+                // If maximized, restore first then allow dragging from new position
+                var point = e.GetPosition(this);
+                WindowState = WindowState.Normal;
+                Left = point.X;
+                Top = point.Y;
+            }
+            DragMove();
+        }
+    }
+
+    private void MinimizeButton_Click(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+
+    private void MaximizeButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (WindowState == WindowState.Maximized)
+        {
+            WindowState = WindowState.Normal;
+            if (MaximizeButton.Content is System.Windows.Controls.TextBlock tb)
+                tb.Text = "□";
+        }
+        else
+        {
+            WindowState = WindowState.Maximized;
+            if (MaximizeButton.Content is System.Windows.Controls.TextBlock tb)
+                tb.Text = "❐";
+        }
+    }
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        Hide();
+        SaveWindowPosition();
+    }
 }
