@@ -1,19 +1,23 @@
-# Release v1.1.0
+# Release v1.2.0
 
 ## What's New
 
+### UI Styling Improvements
+- **Rounded ComboBox controls** - Filter dropdown and Clear History dropdown now have rounded corners (CornerRadius="6")
+- **Rounded TextBox controls** - Search box and Hotkey input now have rounded corners for consistent styling
+- **Theme-aware controls** - All rounded controls use DynamicResource for proper theme support
+
 ### Window Positioning
-- Window now appears at cursor position when hotkey is pressed
+- Window appears at cursor position when hotkey is pressed
 - Automatic off-screen detection - position is adjusted if window would extend beyond screen edges
+
+### Previous Release (v1.1.0)
 
 ### UI Improvements
 - **Frameless window** with custom title bar and window controls (minimize, maximize, close)
 - **Content type filter dropdown** - filter by format (CSS, C#, HTML, Image, JS, JSON, Markdown, Python, Shell, SQL, Text, XML, YAML)
 - **Window border** for better visibility against light backgrounds
 - Styled settings button matching the settings page design
-
-### Git Ignore
-- Added *.zip, *.rar, *.7z to ignore list
 
 ---
 
@@ -60,4 +64,4 @@ Extract the zip and run `DittoMeOff.exe`. Requires .NET 10.0 Runtime.
 
 ---
 
-**Full Changelog**: https://github.com/yourusername/dittoMeOff/commits
+**Full Changelog**: https://github.com/bronder/dittoMeOff/commits

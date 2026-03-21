@@ -6,7 +6,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>DittoMeOff</AssemblyName>
     <RootNamespace>DittoMeOff</RootNamespace>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <Authors>DittoMeOff Team</Authors>
     <Description>Windows Clipboard Manager</Description>
     <Nullable>enable</Nullable>

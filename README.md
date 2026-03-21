@@ -22,11 +22,11 @@ A lightweight clipboard manager for Windows with multi-format syntax highlightin
 ## Installation
 
 ### Download
-Download the latest release from the [Releases page](https://github.com/yourusername/dittoMeOff/releases).
+Download the latest release from the [Releases page](https://github.com/bronder/dittoMeOff/releases).
 
 ### Build from Source
 ```bash
-git clone https://github.com/yourusername/dittoMeOff.git
+git clone https://github.com/bronder/dittoMeOff.git
 cd dittoMeOff
 dotnet build -c Release
 ```
