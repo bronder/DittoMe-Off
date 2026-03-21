@@ -1,17 +1,103 @@
 # DittoMe-Off Build Script
-# Usage: .\build.ps1
+# Usage: .\build.ps1 [-SkipBumpVersion] [--local-only]
 
 param(
     [string]$Configuration = "Release",
-    [string]$Version = "1.2.0"
+    [string]$Version = "1.3.1",
+    [switch]$SkipBumpVersion
 )
 
 $ErrorActionPreference = "Stop"
 
 $projectDir = $PSScriptRoot
 $srcDir = Join-Path $projectDir "src\DittoMe-Off"
+$csprojPath = Join-Path $srcDir "DittoMeOff.csproj"
+$readmePath = Join-Path $projectDir "README.md"
+$releasePath = Join-Path $projectDir "RELEASE.md"
 $outputDir = Join-Path $projectDir "output"
 $publishDir = Join-Path $srcDir "bin\$Configuration\net10.0-windows\publish"
+
+# Function to bump version by 0.1
+function Bump-Version {
+    Write-Host "Bumping version..." -ForegroundColor Cyan
+    
+    # Read current version from csproj
+    $csprojContent = Get-Content $csprojPath -Raw
+    if ($csprojContent -match '<Version>([\d.]+)</Version>') {
+        $currentVersion = $Matches[1]
+        Write-Host "Current version: $currentVersion" -ForegroundColor Yellow
+        
+        # Parse version and increment by 0.1
+        $versionParts = $currentVersion -split '\.'
+        $minor = [int]$versionParts[-1]
+        $minor++
+        $newVersion = ($versionParts[0..($versionParts.Length-2)] -join '.') + ".$minor"
+        
+        Write-Host "New version: $newVersion" -ForegroundColor Green
+        
+        # Update csproj
+        $csprojContent = $csprojContent -replace "<Version>$currentVersion</Version>", "<Version>$newVersion</Version>"
+        Set-Content -Path $csprojPath -Value $csprojContent
+        Write-Host "Updated DittoMeOff.csproj" -ForegroundColor Green
+        
+        # Update build.ps1 version
+        $scriptContent = Get-Content $PSCommandPath -Raw
+        $scriptContent = $scriptContent -replace '(?<=Version = ")[\d.]+(?=")', $newVersion
+        Set-Content -Path $PSCommandPath -Value $scriptContent
+        Write-Host "Updated build.ps1" -ForegroundColor Green
+        
+        # Read current RELEASE.md content
+        $releaseContent = Get-Content $releasePath -Raw
+        
+        # Create new release template
+        $newReleaseTemplate = @"
+# Release v$newVersion
+
+## What's New
+
+_(Add your release notes here)_
+
+---
+
+## Previous Release (v$currentVersion)
+
+$releaseContent
+
+---
+
+**Full Changelog**: https://github.com/bronder/DittoMe-Off/commits
+"@
+        
+        Set-Content -Path $releasePath -Value $newReleaseTemplate
+        Write-Host "Updated RELEASE.md with new template and previous release archived" -ForegroundColor Green
+        
+        # Update README.md version reference if exists
+        if (Test-Path $readmePath) {
+            $readmeContent = Get-Content $readmePath -Raw
+            if ($readmeContent -match 'v[\d.]+') {
+                $readmeContent = $readmeContent -replace 'v[\d.]+', "v$newVersion"
+                Set-Content -Path $readmePath -Value $readmeContent
+                Write-Host "Updated README.md" -ForegroundColor Green
+            }
+        }
+        
+        Write-Host ""
+        Write-Host "Version bumped to $newVersion" -ForegroundColor Green
+        
+        # Update the $Version variable for this run
+        return $newVersion
+    } else {
+        Write-Host "Error: Could not find version in csproj" -ForegroundColor Red
+        exit 1
+    }
+}
+
+# Check if bumping version (default is to bump)
+if (-not $SkipBumpVersion) {
+    $newVer = Bump-Version
+    $Version = $newVer
+}
+
 $zipName = "DittoMe-Off-v$Version-win-x64.zip"
 $zipPath = Join-Path $projectDir $zipName
 
@@ -107,3 +193,4 @@ Write-Host "  Output dir: $outputDir"
 if (-not $skipRelease) {
     Write-Host "  GitHub release: Published"
 }
+

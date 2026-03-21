@@ -299,7 +299,7 @@
             </Border>
 
             <!-- Main Content Grid - 2-column layout: list | preview -->
-            <Grid x:Name="MainContent" Margin="4,4,4,0">
+            <Grid x:Name="MainContent" Margin="4,4,4,0" HorizontalAlignment="Stretch">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>  <!-- Toolbar -->
                     <RowDefinition Height="*"/>     <!-- Main content -->
@@ -605,7 +605,8 @@
                                    Foreground="{DynamicResource SecondaryTextBrush}"
                                    FontSize="10"
                                    VerticalAlignment="Center"
-                                   HorizontalAlignment="Right">
+                                   HorizontalAlignment="Right"
+                                   Margin="0,0,12,0">
                             <Run Text="↑↓ arrows • Enter select • Ctrl+F search • Esc clear"/>
                         </TextBlock>
                     </DockPanel>
@@ -615,12 +616,14 @@
                 <Border x:Name="SettingsPanel"
                         Grid.Row="0" Grid.RowSpan="2"
                         Background="{DynamicResource BackgroundBrush}"
-                        Visibility="{Binding IsSettingsOpen, Converter={StaticResource BoolToVisConverter}}">
+                        Visibility="{Binding IsSettingsOpen, Converter={StaticResource BoolToVisConverter}}"
+                        HorizontalAlignment="Stretch"
+                        Margin="0">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="24" ShadowDepth="8" Opacity="0.25" Color="Black" Direction="270"/>
                     </Border.Effect>
                     
-                    <Grid>
+                    <Grid HorizontalAlignment="Stretch" Width="Auto" Margin="0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
@@ -956,15 +959,16 @@
                         
                         <!-- Footer with rounded bottom corners -->
                         <Border Grid.Row="2" 
-                                Padding="20,16" 
                                 Background="{DynamicResource HeaderBrush}"
-                                CornerRadius="0,0,6,6">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
+                                CornerRadius="0,0,8,8"
+                                Padding="20,16"
+                                Margin="0,0,0,0">
+                            <Grid HorizontalAlignment="Stretch">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
                                 
                                 <!-- Cancel button as text button -->
                                 <Button Content="Cancel"
