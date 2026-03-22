@@ -14,4 +14,5 @@ public class AppConfig
     public double WindowLeft { get; set; } = -1;
     public double WindowTop { get; set; } = -1;
     public double SplitterPosition { get; set; } = 300; // Pixel width of list column
+    public int PreviewLinesCount { get; set; } = 1; // Number of lines to show in preview
 }

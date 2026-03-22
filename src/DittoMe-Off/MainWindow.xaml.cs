@@ -77,6 +77,10 @@ public partial class MainWindow : Window
             {
                 HistoryCountInput.Text = _viewModel.MaxHistoryCount.ToString();
             }
+            if (PreviewLinesInput != null && _viewModel != null)
+            {
+                PreviewLinesInput.Text = _viewModel.PreviewLinesCount.ToString();
+            }
         }), System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
@@ -717,6 +721,25 @@ public partial class MainWindow : Window
         }
     }
 
+    private void PresetPreviewLines_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.Primitives.ToggleButton toggleButton && toggleButton.Tag is string tagValue)
+        {
+            if (int.TryParse(tagValue, out int value))
+            {
+                if (_viewModel != null)
+                {
+                    _viewModel.PreviewLinesCount = value;
+                    // Update the input box text
+                    if (PreviewLinesInput != null)
+                    {
+                        PreviewLinesInput.Text = value.ToString();
+                    }
+                }
+            }
+        }
+    }
+
     private void HistoryCountInput_PreviewTextInput(object sender, TextCompositionEventArgs e)
     {
         // Only allow digits
@@ -742,6 +765,50 @@ public partial class MainWindow : Window
     {
         // Allow manual text editing without immediate binding update
         // Value will be validated and applied on LostFocus or Enter key
+    }
+
+    private void PreviewLinesInput_PreviewTextInput(object sender, TextCompositionEventArgs e)
+    {
+        e.Handled = !IsTextAllowed(e.Text);
+    }
+
+    private void PreviewLinesInput_LostFocus(object sender, RoutedEventArgs e)
+    {
+        ValidateAndClampPreviewLinesCount();
+    }
+
+    private void PreviewLinesInput_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            ValidateAndClampPreviewLinesCount();
+            // Move focus away from the input
+            Keyboard.ClearFocus();
+        }
+    }
+
+    private void PreviewLinesInput_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        // Allow manual text editing without immediate binding update
+        // Value will be validated and applied on LostFocus or Enter key
+    }
+
+    private void ValidateAndClampPreviewLinesCount()
+    {
+        if (PreviewLinesInput == null || _viewModel == null) return;
+
+        if (int.TryParse(PreviewLinesInput.Text, out int value))
+        {
+            // Clamp to valid range (minimum 1)
+            if (value < 1) value = 1;
+            _viewModel.PreviewLinesCount = value;
+            PreviewLinesInput.Text = value.ToString();
+        }
+        else
+        {
+            // Invalid input - reset to current value
+            PreviewLinesInput.Text = _viewModel.PreviewLinesCount.ToString();
+        }
     }
 
     private bool IsTextAllowed(string text)

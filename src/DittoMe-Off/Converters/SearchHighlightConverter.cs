@@ -9,18 +9,22 @@ namespace DittoMeOff.Converters;
 
 public class SearchHighlightConverter : IMultiValueConverter
 {
+    private const double FontSize = 13;
+    private const double LineHeightMultiplier = 1.3;
+
     public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
     {
         if (values.Length < 2 || values[0] == DependencyProperty.UnsetValue)
             return new TextBlock();
 
         string previewText = values[0]?.ToString() ?? "";
-        string searchText = values[1]?.ToString() ?? "";
+        string searchText = values.Length > 1 ? values[1]?.ToString() ?? "" : "";
+        int linesCount = values.Length > 2 && values[2] is int lines ? lines : 1;
 
         var textBlock = new TextBlock();
         textBlock.TextWrapping = TextWrapping.Wrap;
-        textBlock.MaxHeight = 60;
-        textBlock.FontSize = 13;
+        textBlock.MaxHeight = FontSize * LineHeightMultiplier * linesCount;
+        textBlock.FontSize = FontSize;
         textBlock.FontWeight = FontWeights.Normal;
         textBlock.TextTrimming = TextTrimming.CharacterEllipsis;
 

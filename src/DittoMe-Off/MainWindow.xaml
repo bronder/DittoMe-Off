@@ -33,6 +33,7 @@
         <converters:TextPreviewVisibilityConverter x:Key="TextPreviewVisConverter"/>
         <converters:PreviewBadgeConverter x:Key="PreviewBadgeConverter"/>
         <converters:SearchHighlightConverter x:Key="SearchHighlightConverter"/>
+        <converters:PreviewLinesCountToBoolConverter x:Key="PreviewLinesCountToBoolConverter"/>
         
         <!-- Clipboard Item Template - Dense power user layout with 3-line preview -->
         <DataTemplate x:Key="ClipboardItemTemplate">
@@ -88,37 +89,34 @@
                     <Grid Grid.Column="2"
                           Margin="6,0,8,0"
                           VerticalAlignment="Center">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
                         
-                        <!-- 3-line preview text with search highlighting -->
-                        <ContentControl Grid.Row="0">
-                            <ContentControl.Content>
-                                <MultiBinding Converter="{StaticResource SearchHighlightConverter}">
-                                    <Binding Path="PreviewText"/>
-                                    <Binding Path="DataContext.SearchText" RelativeSource="{RelativeSource AncestorType=ListView}"/>
-                                </MultiBinding>
-                            </ContentControl.Content>
-                        </ContentControl>
-                        
-                        <!-- Format badge row -->
-                        <StackPanel Grid.Row="1"
-                                    Orientation="Horizontal"
-                                    Margin="0,4,0,0">
+                        <!-- Format badge and preview text on same line -->
+                        <StackPanel Orientation="Horizontal">
                             <!-- Format Badge pill -->
                             <Border x:Name="FormatBadge"
                                     Padding="5,2"
                                     CornerRadius="4"
                                     Background="{DynamicResource AccentBrush}"
                                     Visibility="{Binding HasFormatBadge, Converter={StaticResource BoolToVisConverter}}"
-                                    Cursor="Hand">
+                                    Cursor="Hand"
+                                    VerticalAlignment="Center"
+                                    Margin="0,0,8,0">
                                 <TextBlock Text="{Binding FormatBadgeText}"
                                            FontSize="9"
                                            FontWeight="SemiBold"
                                            Foreground="White"/>
                             </Border>
+                            
+                            <!-- 3-line preview text with search highlighting -->
+                            <ContentControl FontWeight="Normal" VerticalAlignment="Center">
+                                <ContentControl.Content>
+                                    <MultiBinding Converter="{StaticResource SearchHighlightConverter}">
+                                        <Binding Path="PreviewText"/>
+                                        <Binding Path="DataContext.SearchText" RelativeSource="{RelativeSource AncestorType=ListView}"/>
+                                        <Binding Path="DataContext.PreviewLinesCount" RelativeSource="{RelativeSource AncestorType=ListView}"/>
+                                    </MultiBinding>
+                                </ContentControl.Content>
+                            </ContentControl>
                         </StackPanel>
                     </Grid>
                     
@@ -306,7 +304,7 @@
                     <RowDefinition Height="Auto"/>  <!-- Status bar -->
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition x:Name="ListColumn" Width="280" MinWidth="200" MaxWidth="350"/>
+                    <ColumnDefinition x:Name="ListColumn" Width="280" MinWidth="200"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition x:Name="PreviewColumn" Width="*" MinWidth="300"/>
                 </Grid.ColumnDefinitions>
@@ -944,6 +942,261 @@
                                                              TextChanged="HistoryCountInput_TextChanged"/>
                                                     <TextBlock Grid.Column="1" 
                                                                Text=" items" 
+                                                               Foreground="{DynamicResource SecondaryTextBrush}" 
+                                                               FontSize="11"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0,10,0"/>
+                                                </Grid>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <!-- Preview Lines Count Section -->
+                                        <StackPanel Margin="0,0,0,24">
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                                <TextBlock Text="📝" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Preview Lines Count" 
+                                                           Foreground="{DynamicResource TextBrush}" 
+                                                           FontWeight="SemiBold"
+                                                           VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            
+                                            <!-- Preset buttons for preview lines -->
+                                            <WrapPanel Margin="0,0,0,12">
+                                                <ToggleButton Content="1"
+                                                        Click="PresetPreviewLines_Click"
+                                                        Tag="1"
+                                                        Margin="0,0,6,6"
+                                                        Cursor="Hand"
+                                                        IsChecked="{Binding PreviewLinesCount, Converter={StaticResource PreviewLinesCountToBoolConverter}, ConverterParameter=1, Mode=OneWay}">
+                                                    <ToggleButton.Style>
+                                                        <Style TargetType="ToggleButton">
+                                                            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                                                            <Setter Property="Padding" Value="12,6"/>
+                                                            <Setter Property="FontSize" Value="11"/>
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="ToggleButton">
+                                                                        <Border x:Name="border"
+                                                                                Background="{TemplateBinding Background}"
+                                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                                CornerRadius="8"
+                                                                                Padding="{TemplateBinding Padding}">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                                                                <Setter Property="Foreground" Value="White"/>
+                                                                            </Trigger>
+                                                                            <Trigger Property="IsChecked" Value="True">
+                                                                                <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                                                                <Setter Property="Foreground" Value="White"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </ToggleButton.Style>
+                                                </ToggleButton>
+                                                <ToggleButton Content="2"
+                                                        Click="PresetPreviewLines_Click"
+                                                        Tag="2"
+                                                        Margin="0,0,6,6"
+                                                        Cursor="Hand"
+                                                        IsChecked="{Binding PreviewLinesCount, Converter={StaticResource PreviewLinesCountToBoolConverter}, ConverterParameter=2, Mode=OneWay}">
+                                                    <ToggleButton.Style>
+                                                        <Style TargetType="ToggleButton">
+                                                            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                                                            <Setter Property="Padding" Value="12,6"/>
+                                                            <Setter Property="FontSize" Value="11"/>
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="ToggleButton">
+                                                                        <Border x:Name="border"
+                                                                                Background="{TemplateBinding Background}"
+                                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                                CornerRadius="8"
+                                                                                Padding="{TemplateBinding Padding}">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                                                                <Setter Property="Foreground" Value="White"/>
+                                                                            </Trigger>
+                                                                            <Trigger Property="IsChecked" Value="True">
+                                                                                <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                                                                <Setter Property="Foreground" Value="White"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </ToggleButton.Style>
+                                                </ToggleButton>
+                                                <ToggleButton Content="3"
+                                                        Click="PresetPreviewLines_Click"
+                                                        Tag="3"
+                                                        Margin="0,0,6,6"
+                                                        Cursor="Hand"
+                                                        IsChecked="{Binding PreviewLinesCount, Converter={StaticResource PreviewLinesCountToBoolConverter}, ConverterParameter=3, Mode=OneWay}">
+                                                    <ToggleButton.Style>
+                                                        <Style TargetType="ToggleButton">
+                                                            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                                                            <Setter Property="Padding" Value="12,6"/>
+                                                            <Setter Property="FontSize" Value="11"/>
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="ToggleButton">
+                                                                        <Border x:Name="border"
+                                                                                Background="{TemplateBinding Background}"
+                                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                                CornerRadius="8"
+                                                                                Padding="{TemplateBinding Padding}">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                                                                <Setter Property="Foreground" Value="White"/>
+                                                                            </Trigger>
+                                                                            <Trigger Property="IsChecked" Value="True">
+                                                                                <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                                                                <Setter Property="Foreground" Value="White"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </ToggleButton.Style>
+                                                </ToggleButton>
+                                                <ToggleButton Content="4"
+                                                        Click="PresetPreviewLines_Click"
+                                                        Tag="4"
+                                                        Margin="0,0,6,6"
+                                                        Cursor="Hand"
+                                                        IsChecked="{Binding PreviewLinesCount, Converter={StaticResource PreviewLinesCountToBoolConverter}, ConverterParameter=4, Mode=OneWay}">
+                                                    <ToggleButton.Style>
+                                                        <Style TargetType="ToggleButton">
+                                                            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                                                            <Setter Property="Padding" Value="12,6"/>
+                                                            <Setter Property="FontSize" Value="11"/>
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="ToggleButton">
+                                                                        <Border x:Name="border"
+                                                                                Background="{TemplateBinding Background}"
+                                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                                CornerRadius="8"
+                                                                                Padding="{TemplateBinding Padding}">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                                                                <Setter Property="Foreground" Value="White"/>
+                                                                            </Trigger>
+                                                                            <Trigger Property="IsChecked" Value="True">
+                                                                                <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                                                                <Setter Property="Foreground" Value="White"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </ToggleButton.Style>
+                                                </ToggleButton>
+                                                <ToggleButton Content="5"
+                                                        Click="PresetPreviewLines_Click"
+                                                        Tag="5"
+                                                        Margin="0,0,6,6"
+                                                        Cursor="Hand"
+                                                        IsChecked="{Binding PreviewLinesCount, Converter={StaticResource PreviewLinesCountToBoolConverter}, ConverterParameter=5, Mode=OneWay}">
+                                                    <ToggleButton.Style>
+                                                        <Style TargetType="ToggleButton">
+                                                            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                                                            <Setter Property="Padding" Value="12,6"/>
+                                                            <Setter Property="FontSize" Value="11"/>
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="ToggleButton">
+                                                                        <Border x:Name="border"
+                                                                                Background="{TemplateBinding Background}"
+                                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                                CornerRadius="8"
+                                                                                Padding="{TemplateBinding Padding}">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                                                                <Setter Property="Foreground" Value="White"/>
+                                                                            </Trigger>
+                                                                            <Trigger Property="IsChecked" Value="True">
+                                                                                <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                                                                <Setter Property="Foreground" Value="White"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </ToggleButton.Style>
+                                                </ToggleButton>
+                                            </WrapPanel>
+                                            
+                                            <!-- Custom number input box -->
+                                            <Border Background="{DynamicResource CardBrush}"
+                                                    BorderBrush="{DynamicResource BorderBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="6"
+                                                    Margin="0,0,0,12"
+                                                    VerticalAlignment="Center"
+                                                    HorizontalAlignment="Left">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox x:Name="PreviewLinesInput"
+                                                             MinWidth="50"
+                                                             Padding="10,8"
+                                                             FontSize="12"
+                                                             FontWeight="SemiBold"
+                                                             Background="Transparent"
+                                                             BorderThickness="0"
+                                                             Foreground="{DynamicResource TextBrush}"
+                                                             VerticalContentAlignment="Center"
+                                                             PreviewTextInput="PreviewLinesInput_PreviewTextInput"
+                                                             LostFocus="PreviewLinesInput_LostFocus"
+                                                             KeyDown="PreviewLinesInput_KeyDown"
+                                                             TextChanged="PreviewLinesInput_TextChanged"/>
+                                                    <TextBlock Grid.Column="1" 
+                                                               Text=" lines" 
                                                                Foreground="{DynamicResource SecondaryTextBrush}" 
                                                                FontSize="11"
                                                                VerticalAlignment="Center"

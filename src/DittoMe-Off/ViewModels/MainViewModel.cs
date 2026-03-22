@@ -49,6 +49,9 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private Dictionary<AppTheme, string> _themeOptions;
 
+    [ObservableProperty]
+    private int _previewLinesCount = 1;
+
     private List<ClipboardItem> _allItemsCache = new();
     private readonly DispatcherTimer _filterDebounceTimer;
 
@@ -104,6 +107,7 @@ public partial class MainViewModel : ObservableObject
         MaxHistoryCount = config.MaxHistoryCount;
         AutoStart = config.AutoStart;
         SelectedTheme = config.Theme;
+        PreviewLinesCount = config.PreviewLinesCount;
     }
 
     private void LoadItems()
@@ -355,6 +359,7 @@ public partial class MainViewModel : ObservableObject
             config.MaxHistoryCount = MaxHistoryCount;
             config.AutoStart = AutoStart;
             config.Theme = SelectedTheme;
+            config.PreviewLinesCount = PreviewLinesCount;
         });
         _themeService.ApplyTheme(SelectedTheme);
         

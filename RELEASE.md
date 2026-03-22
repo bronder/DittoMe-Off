@@ -1,3 +1,28 @@
+# Release v1.5.2
+
+## What's New
+
+### UI Improvements
+- **Removed splitter max width restriction** - The list/preview splitter can now be dragged to any width
+- **Unbolded list font** - List items now use normal font weight instead of bold
+- **Format badge repositioned** - Format type badge now appears on the same line as preview text
+
+### Preview Lines Configuration
+- **Configurable preview lines** - New setting to control how many lines of preview text to show (default: 1)
+- **Preset buttons** - Quick selection buttons for 1-5 lines
+- **Freeform input** - Type any number for custom line count
+- **Persisted setting** - Preview lines count is saved and restored on app restart
+
+---
+
+## Previous Release (v1.5.1)
+
+_(Add your release notes here)_
+
+---
+
+## Previous Release (v1.5.0)
+
 # Release v1.5.0
 
 ## What's New
@@ -149,6 +174,11 @@ Extract the zip and run `DittoMe-Off.exe`. Requires .NET 10.0 Runtime.
 ---
 
 **Full Changelog**: https://github.com/bronder/DittoMe-Off/commits
+
+---
+
+**Full Changelog**: https://github.com/bronder/DittoMe-Off/commits
+
 
 ---
 
