@@ -3,7 +3,7 @@
 
 param(
     [string]$Configuration = "Release",
-    [string]$Version = "1.3.2",
+    [string]$Version = "1.4.0",
     [switch]$SkipBumpVersion
 )
 
@@ -193,5 +193,3 @@ Write-Host "  Output dir: $outputDir"
 if (-not $skipRelease) {
     Write-Host "  GitHub release: Published"
 }
-
-

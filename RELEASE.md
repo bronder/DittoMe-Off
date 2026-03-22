@@ -1,3 +1,21 @@
+# Release v1.4.0
+
+## What's New
+
+### Architecture Improvements
+- **Dependency Injection** - Implemented proper DI using Microsoft.Extensions.DependencyInjection
+  - All services now implement interfaces for better abstraction
+  - Services are registered in a central DI container in App.xaml.cs
+  - Enables unit testing and makes the codebase more maintainable
+  - Constructor injection used throughout the application
+
+### New Dependencies
+- Added `Microsoft.Extensions.DependencyInjection` v8.0.0
+
+---
+
+## Previous Release (v1.3.2)
+
 # Release v1.3.2
 
 ## What's New
