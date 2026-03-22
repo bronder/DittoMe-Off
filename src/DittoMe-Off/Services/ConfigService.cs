@@ -1,11 +1,13 @@
 using System.IO;
 using DittoMeOff.Models;
 using Newtonsoft.Json;
+using NLog;
 
 namespace DittoMeOff.Services;
 
 public class ConfigService : IConfigService
 {
+    private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
     private readonly string _configPath;
     private AppConfig _config;
 
@@ -21,6 +23,8 @@ public class ConfigService : IConfigService
         Directory.CreateDirectory(appDataPath);
         _configPath = Path.Combine(appDataPath, AppConstants.ConfigFileName);
         _config = Load();
+        
+        _logger.Info("Configuration loaded from {ConfigPath}", _configPath);
     }
 
     private AppConfig Load()
@@ -35,7 +39,7 @@ public class ConfigService : IConfigService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error loading config: {ex.Message}");
+            _logger.Error(ex, "Error loading config");
         }
         
         return new AppConfig();
@@ -47,10 +51,11 @@ public class ConfigService : IConfigService
         {
             var json = JsonConvert.SerializeObject(_config, Formatting.Indented);
             File.WriteAllText(_configPath, json);
+            _logger.Debug("Configuration saved");
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error saving config: {ex.Message}");
+            _logger.Error(ex, "Error saving config");
         }
     }
 

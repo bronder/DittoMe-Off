@@ -38,8 +38,9 @@ public class ClipboardItem
                 _imageSource = bitmap;
                 return _imageSource;
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"Error loading image: {ex.Message}");
                 return null;
             }
         }
@@ -50,7 +51,12 @@ public class ClipboardItem
     /// </summary>
     public void ClearImageCache()
     {
+        if (_imageSource is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
         _imageSource = null;
+        ImageData = null;
     }
     
     public string DisplayText => ContentType switch

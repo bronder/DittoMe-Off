@@ -178,7 +178,7 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void CopyItem(ClipboardItem? item)
+    private async Task CopyItem(ClipboardItem? item)
     {
         if (item == null) return;
 
@@ -213,11 +213,9 @@ public partial class MainViewModel : ObservableObject
         }
         finally
         {
-            // Restart monitoring after a short delay
-            Task.Delay(500).ContinueWith(_ =>
-            {
-                Application.Current?.Dispatcher.Invoke(() => _clipboardMonitor.Start());
-            });
+            // Restart monitoring after a short delay using proper async/await
+            await Task.Delay(500);
+            Application.Current?.Dispatcher.Invoke(() => _clipboardMonitor.Start());
         }
     }
 

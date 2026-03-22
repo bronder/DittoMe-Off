@@ -61,8 +61,11 @@ public partial class MainWindow : Window
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
         }
 
-        Width = config.WindowWidth > 0 ? config.WindowWidth : 450;
-        Height = config.WindowHeight > 0 ? config.WindowHeight : 600;
+        // Validate window dimensions are within reasonable bounds
+        const double MinWidth = 300, MaxWidth = 2000;
+        const double MinHeight = 200, MaxHeight = 1500;
+        Width = config.WindowWidth > 0 ? Math.Clamp(config.WindowWidth, MinWidth, MaxWidth) : 450;
+        Height = config.WindowHeight > 0 ? Math.Clamp(config.WindowHeight, MinHeight, MaxHeight) : 600;
 
         // Apply saved splitter position after window size is set
         ApplySplitterPosition(config.SplitterPosition);
@@ -106,6 +109,22 @@ public partial class MainWindow : Window
             }
         }
 
+        HandleClipboardListNavigation(e);
+    }
+
+    private void ClipboardListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ClipboardListView.SelectedItem != null)
+        {
+            ClipboardListView.ScrollIntoView(ClipboardListView.SelectedItem);
+        }
+    }
+
+    /// <summary>
+    /// Handles keyboard navigation in the clipboard list. Shared between PreviewKeyDown and ClipboardListView_KeyDown.
+    /// </summary>
+    private void HandleClipboardListNavigation(KeyEventArgs e)
+    {
         switch (e.Key)
         {
             case Key.Down:
@@ -129,6 +148,18 @@ public partial class MainWindow : Window
             case Key.Enter:
                 if (ClipboardListView.SelectedItem is ClipboardItem item)
                 {
+                    // Move selected item to the top of the list
+                    if (_viewModel?.ClipboardItems != null && _viewModel.ClipboardItems.Count > 1)
+                    {
+                        int currentIndex = _viewModel.ClipboardItems.IndexOf(item);
+                        if (currentIndex > 0)
+                        {
+                            _viewModel.ClipboardItems.RemoveAt(currentIndex);
+                            _viewModel.ClipboardItems.Insert(0, item);
+                            ClipboardListView.SelectedIndex = 0;
+                        }
+                    }
+                    
                     _viewModel?.CopyItemCommand.Execute(item);
                     Hide();
                 }
@@ -165,14 +196,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ClipboardListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (ClipboardListView.SelectedItem != null)
-        {
-            ClipboardListView.ScrollIntoView(ClipboardListView.SelectedItem);
-        }
-    }
-
     private void FilterCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (FilterCombo.SelectedItem is ComboBoxItem item && _viewModel != null)
@@ -192,63 +215,7 @@ public partial class MainWindow : Window
 
     private void ClipboardListView_KeyDown(object sender, KeyEventArgs e)
     {
-        switch (e.Key)
-        {
-            case Key.Down:
-                if (ClipboardListView.SelectedIndex < ClipboardListView.Items.Count - 1)
-                {
-                    ClipboardListView.SelectedIndex++;
-                    ClipboardListView.ScrollIntoView(ClipboardListView.SelectedItem);
-                }
-                e.Handled = true;
-                break;
-
-            case Key.Up:
-                if (ClipboardListView.SelectedIndex > 0)
-                {
-                    ClipboardListView.SelectedIndex--;
-                    ClipboardListView.ScrollIntoView(ClipboardListView.SelectedItem);
-                }
-                e.Handled = true;
-                break;
-
-            case Key.Enter:
-                if (ClipboardListView.SelectedItem is ClipboardItem item)
-                {
-                    _viewModel?.CopyItemCommand.Execute(item);
-                    Hide();
-                }
-                e.Handled = true;
-                break;
-
-            case Key.Escape:
-                Hide();
-                e.Handled = true;
-                break;
-
-            case Key.Delete:
-                // Delete all selected items
-                var itemsToDeleteKeyDown = ClipboardListView.SelectedItems.Cast<ClipboardItem>().ToList();
-                foreach (var deleteItem in itemsToDeleteKeyDown)
-                {
-                    _viewModel?.DeleteItemCommand.Execute(deleteItem);
-                }
-                e.Handled = true;
-                break;
-
-            case Key.P:
-                // Toggle pin for all selected items (Ctrl+P)
-                if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
-                {
-                    var itemsToToggleKeyDown = ClipboardListView.SelectedItems.Cast<ClipboardItem>().ToList();
-                    foreach (var pinItem in itemsToToggleKeyDown)
-                    {
-                        _viewModel?.TogglePinCommand.Execute(pinItem);
-                    }
-                    e.Handled = true;
-                }
-                break;
-        }
+        HandleClipboardListNavigation(e);
     }
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -354,6 +321,14 @@ public partial class MainWindow : Window
         }), System.Windows.Threading.DispatcherPriority.Background);
         
         Activate();
+        
+        // Select the top item when window is shown
+        if (_viewModel?.ClipboardItems.Count > 0)
+        {
+            ClipboardListView.SelectedIndex = 0;
+            _viewModel.SelectedItem = _viewModel.ClipboardItems[0];
+        }
+        
         ClipboardListView.Focus();
     }
     

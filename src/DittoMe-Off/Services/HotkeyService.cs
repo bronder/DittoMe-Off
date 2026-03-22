@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
+using NLog;
 
 namespace DittoMeOff.Services;
 
@@ -15,6 +16,7 @@ public enum HotkeyRegistrationResult
 
 public class HotkeyService : IHotkeyService
 {
+    private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
     private const int WM_HOTKEY = 0x0312;
     private const int HOTKEY_ID = 9000;
     
@@ -23,6 +25,10 @@ public class HotkeyService : IHotkeyService
     private bool _isRegistered;
 
     public event EventHandler? HotkeyPressed;
+
+    public HotkeyService()
+    {
+    }
 
     [DllImport("user32.dll")]
     private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
@@ -42,6 +48,7 @@ public class HotkeyService : IHotkeyService
 
     public void Initialize(Window window)
     {
+        _logger.Info("Initializing HotkeyService");
         var helper = new WindowInteropHelper(window);
         _windowHandle = helper.Handle;
         _source = HwndSource.FromHwnd(_windowHandle);
@@ -50,27 +57,37 @@ public class HotkeyService : IHotkeyService
 
     public HotkeyRegistrationResult RegisterHotkey(string hotkeyString)
     {
+        _logger.Debug("Attempting to register hotkey: {HotkeyString}", hotkeyString);
+
         if (_isRegistered)
         {
+            _logger.Debug("Unregistering existing hotkey before registering new one");
             UnregisterHotkey();
         }
 
         var (modifiers, key) = ParseHotkey(hotkeyString);
-        if (key == 0) return HotkeyRegistrationResult.InvalidHotkey;
+        if (key == 0)
+        {
+            _logger.Warn("Hotkey registration failed - invalid hotkey string: {HotkeyString}", hotkeyString);
+            return HotkeyRegistrationResult.InvalidHotkey;
+        }
 
         var result = RegisterHotKey(_windowHandle, HOTKEY_ID, (uint)modifiers, key);
         if (result)
         {
             _isRegistered = true;
+            _logger.Info("Hotkey registered successfully: {HotkeyString}", hotkeyString);
             return HotkeyRegistrationResult.Success;
         }
         
         // Registration failed - likely a conflict with another hotkey
+        _logger.Warn("Hotkey registration failed - conflict: {HotkeyString}", hotkeyString);
         return HotkeyRegistrationResult.Conflict;
     }
 
     public void UnregisterHotkey()
     {
+        _logger.Debug("UnregisterHotkey called");
         if (_isRegistered)
         {
             UnregisterHotKey(_windowHandle, HOTKEY_ID);

@@ -1,11 +1,13 @@
 using System.IO;
 using DittoMeOff.Models;
 using Microsoft.Data.Sqlite;
+using NLog;
 
 namespace DittoMeOff.Services;
 
 public class DatabaseService : IDatabaseService
 {
+    private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
     private readonly string _dbPath;
     private SqliteConnection? _connection;
 
@@ -18,12 +20,16 @@ public class DatabaseService : IDatabaseService
         
         Directory.CreateDirectory(appDataPath);
         _dbPath = Path.Combine(appDataPath, AppConstants.DatabaseFileName);
+        
+        _logger.Debug("Database path: {DbPath}", _dbPath);
     }
 
     public void Initialize()
     {
         _connection = new SqliteConnection($"Data Source={_dbPath}");
         _connection.Open();
+        
+        _logger.Info("Database connection opened");
         
         var createTableSql = @"
             CREATE TABLE IF NOT EXISTS ClipboardItems (
@@ -45,6 +51,8 @@ public class DatabaseService : IDatabaseService
         
         using var cmd = new SqliteCommand(createTableSql, _connection);
         cmd.ExecuteNonQuery();
+        
+        _logger.Debug("Database tables initialized");
 
         // Add FormatType column if it doesn't exist (migration for existing databases)
         try
@@ -164,5 +172,6 @@ public class DatabaseService : IDatabaseService
     {
         _connection?.Close();
         _connection?.Dispose();
+        _logger.Debug("Database connection closed");
     }
 }

@@ -1,6 +1,28 @@
-# Release v1.4.1
+# Release v1.5.0
 
 ## What's New
+
+### Logging Infrastructure
+- Added NLog logging framework with rolling file logs
+- Implemented structured logging with contextual properties
+- Added global exception handling with stack trace capture
+- Log files stored in `%LOCALAPPDATA%\DittoMe-Off\Logs\`
+
+### Services Updated
+- ClipboardMonitorService: Added Start/Stop lifecycle logging
+- DatabaseService: Added connection lifecycle logging  
+- ConfigService: Added configuration load/save logging
+- ThemeService: Added theme loading and fallback handling
+- HotkeyService: Added registration/unregistration logging
+- GlobalExceptionHandler: Catches unhandled UI thread, non-UI thread, and task exceptions
+
+### Bug Fixes
+- Fixed Debug.WriteLine calls replaced with proper NLog logging
+- MessageBox on fatal errors now only shows when debugger attached
+
+---
+
+## Previous Release (v1.4.1)
 
 _(Add your release notes here)_
 

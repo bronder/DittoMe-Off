@@ -51,6 +51,13 @@ Access settings via File > Settings or the ⚙️ button:
 
 Settings are stored in `%APPDATA%/DittoMe-Off/`
 
+## Logging
+
+DittoMe-Off uses NLog for structured logging. Log files are stored at:
+`%LOCALAPPDATA%\DittoMe-Off\Logs\`
+
+Logs rotate daily with 7-day retention. Set `minlevel` in `NLog.config` to control verbosity.
+
 ## Keyboard Shortcuts
 
 | Shortcut | Action |
@@ -88,5 +95,5 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ---
 
-**Version: v1.4.1**
+**Version: v1.5.0**
 

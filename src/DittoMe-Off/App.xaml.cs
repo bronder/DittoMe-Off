@@ -1,16 +1,26 @@
+using System.IO;
 using System.Windows;
 using DittoMeOff.Services;
 using DittoMeOff.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
+using NLog;
 
 namespace DittoMeOff;
 
 public partial class App : Application
 {
+    private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
     private ServiceProvider? _serviceProvider;
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // Initialize NLog early
+        var configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "NLog.config");
+        LogManager.Configuration = new NLog.Config.XmlLoggingConfiguration(configPath);
+        
+        // Set up global exception handling
+        GlobalExceptionHandler.Initialize(this);
+        
         base.OnStartup(e);
 
         // Configure dependency injection
@@ -81,6 +91,9 @@ public partial class App : Application
             _serviceProvider.Dispose();
         }
         
+        // Flush and shutdown NLog
+        LogManager.Shutdown();
+        
         base.OnExit(e);
     }
 
@@ -109,7 +122,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error updating auto-start: {ex.Message}");
+            _logger.Error(ex, "Failed to update auto-start");
         }
     }
 }

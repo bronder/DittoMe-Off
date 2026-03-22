@@ -5,11 +5,13 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using DittoMeOff.Models;
+using NLog;
 
 namespace DittoMeOff.Services;
 
 public class ClipboardMonitorService : IClipboardMonitorService
 {
+    private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
     private System.Windows.Threading.DispatcherTimer? _timer;
     private readonly IConfigService _configService;
     private readonly IDatabaseService _databaseService;
@@ -26,7 +28,11 @@ public class ClipboardMonitorService : IClipboardMonitorService
 
     public void Start()
     {
-        if (_isMonitoring) return;
+        if (_isMonitoring)
+        {
+            _logger.Debug("Start called but already monitoring, skipping");
+            return;
+        }
 
         _nextClipboardSequenceNumber = GetClipboardSequenceNumber();
         
@@ -37,12 +43,20 @@ public class ClipboardMonitorService : IClipboardMonitorService
         _timer.Tick += OnTimerTick;
         _timer.Start();
         _isMonitoring = true;
+        _logger.Info("Clipboard monitoring started with poll interval: {PollInterval}ms", _configService.Config.ClipboardPollInterval);
     }
 
     public void Stop()
     {
+        if (!_isMonitoring)
+        {
+            _logger.Debug("Stop called but not monitoring, skipping");
+            return;
+        }
+
         _timer?.Stop();
         _isMonitoring = false;
+        _logger.Info("Clipboard monitoring stopped");
     }
 
     private void OnTimerTick(object? sender, EventArgs e)
@@ -68,7 +82,7 @@ public class ClipboardMonitorService : IClipboardMonitorService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error monitoring clipboard: {ex.Message}");
+            _logger.Error(ex, "Error monitoring clipboard");
         }
     }
 
@@ -96,7 +110,7 @@ public class ClipboardMonitorService : IClipboardMonitorService
                             ContentType = ContentType.Text,
                             FormatType = formatType,
                             Timestamp = DateTime.Now,
-                            PreviewText = text.Length > 5000 ? text.Substring(0, 5000) : text,
+                            PreviewText = text.Length > AppConstants.PreviewTextMaxLength ? text.Substring(0, AppConstants.PreviewTextMaxLength) : text,
                             Size = Encoding.UTF8.GetByteCount(text),
                             AppSource = appSource
                         };
@@ -143,7 +157,7 @@ public class ClipboardMonitorService : IClipboardMonitorService
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error capturing clipboard: {ex.Message}");
+                _logger.Error(ex, "Error capturing clipboard");
             }
         });
         
@@ -160,8 +174,9 @@ public class ClipboardMonitorService : IClipboardMonitorService
             encoder.Save(stream);
             return stream.ToArray();
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.Error(ex, "Error converting BitmapSource to bytes");
             return null;
         }
     }
@@ -193,13 +208,21 @@ public class ClipboardMonitorService : IClipboardMonitorService
             if (processId == 0)
                 return null;
 
-            var process = System.Diagnostics.Process.GetProcessById((int)processId);
-            return process.ProcessName;
+            // Use TryGetById to avoid exceptions when process has exited
+            if (System.Diagnostics.Process.GetProcessById((int)processId) is { } process)
+            {
+                return process.ProcessName;
+            }
         }
-        catch
+        catch (InvalidOperationException)
         {
-            return null;
+            // Process has exited between checking and accessing it
         }
+        catch (ArgumentException)
+        {
+            // Invalid process ID
+        }
+        return null;
     }
 
     [DllImport("user32.dll")]

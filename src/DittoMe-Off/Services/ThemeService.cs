@@ -1,11 +1,13 @@
 using System.Windows;
 using System.Windows.Media;
 using DittoMeOff.Models;
+using NLog;
 
 namespace DittoMeOff.Services;
 
 public class ThemeService : IThemeService
 {
+    private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
     private readonly IConfigService _configService;
     private ResourceDictionary? _currentThemeDictionary;
     private readonly string _themesFolder;
@@ -13,7 +15,12 @@ public class ThemeService : IThemeService
     public ThemeService(IConfigService configService)
     {
         _configService = configService;
-        _themesFolder = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Themes");
+        
+        // Use the application base directory to locate themes folder
+        var appBase = AppDomain.CurrentDomain.BaseDirectory;
+        var themesPath = System.IO.Path.Combine(appBase, "Themes");
+        // Fallback to relative path if themes folder doesn't exist at base
+        _themesFolder = System.IO.Directory.Exists(themesPath) ? themesPath : "Themes";
     }
 
     public void ApplyTheme(AppTheme theme)
@@ -33,31 +40,29 @@ public class ThemeService : IThemeService
             var themeFileName = $"{theme}.xaml";
             var themePath = System.IO.Path.Combine(_themesFolder, themeFileName);
             
-            System.Diagnostics.Debug.WriteLine($"[ThemeService] Attempting to load theme: {theme}");
-            System.Diagnostics.Debug.WriteLine($"[ThemeService] Theme path: {themePath}");
-            System.Diagnostics.Debug.WriteLine($"[ThemeService] File exists: {System.IO.File.Exists(themePath)}");
+            _logger.Debug("Attempting to load theme: {Theme}, path: {ThemePath}, exists: {Exists}", 
+                theme, themePath, System.IO.File.Exists(themePath));
 
             if (System.IO.File.Exists(themePath))
             {
                 var uri = new Uri(themePath, UriKind.Absolute);
-                System.Diagnostics.Debug.WriteLine($"[ThemeService] Loading from URI: {uri}");
+                _logger.Debug("Loading theme from URI: {Uri}", uri);
                 var newTheme = new ResourceDictionary { Source = uri };
                 
                 app.Resources.MergedDictionaries.Add(newTheme);
                 _currentThemeDictionary = newTheme;
-                System.Diagnostics.Debug.WriteLine($"[ThemeService] Theme loaded successfully");
+                _logger.Info("Theme loaded successfully: {Theme}", theme);
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine($"[ThemeService] File not found, applying fallback colors");
+                _logger.Warn("Theme file not found, applying fallback colors: {Theme}", theme);
                 // Fallback to embedded colors if theme file not found
                 ApplyFallbackColors(theme);
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error loading theme: {ex.Message}");
-            System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+            _logger.Error(ex, "Error loading theme");
             ApplyFallbackColors(theme);
         }
     }
