@@ -1,3 +1,13 @@
+# Release v1.4.1
+
+## What's New
+
+_(Add your release notes here)_
+
+---
+
+## Previous Release (v1.4.0)
+
 # Release v1.4.0
 
 ## What's New
@@ -113,6 +123,10 @@ Extract the zip and run `DittoMe-Off.exe`. Requires .NET 10.0 Runtime.
 
 **Full Changelog**: https://github.com/bronder/DittoMe-Off/commits
 
+
+---
+
+**Full Changelog**: https://github.com/bronder/DittoMe-Off/commits
 
 ---
 

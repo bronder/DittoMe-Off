@@ -88,4 +88,5 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ---
 
-**Version: v1.4.0**
+**Version: v1.4.1**
+
