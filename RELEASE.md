@@ -1,6 +1,12 @@
-# Release v1.5.2
+# Release v1.6
 
 ## What's New
+
+_(Add your release notes here)_
+
+---
+
+## Previous Release (v1.5.2)
 
 ### UI Improvements
 - **Removed splitter max width restriction** - The list/preview splitter can now be dragged to any width

@@ -3,7 +3,7 @@
 
 param(
     [string]$Configuration = "Release",
-    [string]$Version = "1.5.2",
+    [string]$Version = "1.6",
     [switch]$SkipBumpVersion
 )
 
@@ -35,51 +35,11 @@ function Bump-Version {
         
         Write-Host "New version: $newVersion" -ForegroundColor Green
         
-        # Update csproj
-        $csprojContent = $csprojContent -replace "<Version>$currentVersion</Version>", "<Version>$newVersion</Version>"
-        Set-Content -Path $csprojPath -Value $csprojContent
-        Write-Host "Updated DittoMeOff.csproj" -ForegroundColor Green
-        
         # Update build.ps1 version
         $scriptContent = Get-Content $PSCommandPath -Raw
         $scriptContent = $scriptContent -replace '(?<=Version = ")[\d.]+(?=")', $newVersion
         Set-Content -Path $PSCommandPath -Value $scriptContent
         Write-Host "Updated build.ps1" -ForegroundColor Green
-        
-        # Read current RELEASE.md content
-        $releaseContent = Get-Content $releasePath -Raw
-        
-        # Create new release template
-        $newReleaseTemplate = @"
-# Release v$newVersion
-
-## What's New
-
-_(Add your release notes here)_
-
----
-
-## Previous Release (v$currentVersion)
-
-$releaseContent
-
----
-
-**Full Changelog**: https://github.com/bronder/DittoMe-Off/commits
-"@
-        
-        Set-Content -Path $releasePath -Value $newReleaseTemplate
-        Write-Host "Updated RELEASE.md with new template and previous release archived" -ForegroundColor Green
-        
-        # Update README.md version reference if exists
-        if (Test-Path $readmePath) {
-            $readmeContent = Get-Content $readmePath -Raw
-            if ($readmeContent -match 'v[\d.]+') {
-                $readmeContent = $readmeContent -replace 'v[\d.]+', "v$newVersion"
-                Set-Content -Path $readmePath -Value $readmeContent
-                Write-Host "Updated README.md" -ForegroundColor Green
-            }
-        }
         
         Write-Host ""
         Write-Host "Version bumped to $newVersion" -ForegroundColor Green
@@ -193,5 +153,6 @@ Write-Host "  Output dir: $outputDir"
 if (-not $skipRelease) {
     Write-Host "  GitHub release: Published"
 }
+
 
 
