@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DittoMeOff.Models;
@@ -9,11 +10,11 @@ namespace DittoMeOff.ViewModels;
 
 public partial class MainViewModel : ObservableObject
 {
-    private readonly DatabaseService _databaseService;
-    private readonly ConfigService _configService;
-    private readonly ClipboardMonitorService _clipboardMonitor;
-    private readonly ThemeService _themeService;
-    private readonly HotkeyService _hotkeyService;
+    private readonly IDatabaseService _databaseService;
+    private readonly IConfigService _configService;
+    private readonly IClipboardMonitorService _clipboardMonitor;
+    private readonly IThemeService _themeService;
+    private readonly IHotkeyService _hotkeyService;
 
     [ObservableProperty]
     private ObservableCollection<ClipboardItem> _clipboardItems = new();
@@ -34,10 +35,10 @@ public partial class MainViewModel : ObservableObject
     private bool _isSettingsOpen;
 
     [ObservableProperty]
-    private string _currentHotkey = "Ctrl+Shift+V";
+    private string _currentHotkey = AppConstants.DefaultHotkey;
 
     [ObservableProperty]
-    private int _maxHistoryCount = 100;
+    private int _maxHistoryCount = AppConstants.DefaultMaxHistoryCount;
 
     [ObservableProperty]
     private bool _autoStart;
@@ -48,7 +49,15 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private Dictionary<AppTheme, string> _themeOptions;
 
-    public MainViewModel(DatabaseService databaseService, ConfigService configService, ClipboardMonitorService clipboardMonitor, ThemeService themeService, HotkeyService hotkeyService)
+    private List<ClipboardItem> _allItemsCache = new();
+    private readonly DispatcherTimer _filterDebounceTimer;
+
+    public MainViewModel(
+        IDatabaseService databaseService, 
+        IConfigService configService, 
+        IClipboardMonitorService clipboardMonitor, 
+        IThemeService themeService, 
+        IHotkeyService hotkeyService)
     {
         _databaseService = databaseService;
         _configService = configService;
@@ -76,6 +85,12 @@ public partial class MainViewModel : ObservableObject
             { AppTheme.TokyoNight, "Tokyo Night" }
         };
 
+        _filterDebounceTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(AppConstants.DebounceDelayMs)
+        };
+        _filterDebounceTimer.Tick += OnFilterDebounceTimerTick;
+
         LoadSettings();
         LoadItems();
         
@@ -94,6 +109,7 @@ public partial class MainViewModel : ObservableObject
     private void LoadItems()
     {
         var items = _databaseService.GetItems(_configService.Config.MaxHistoryCount);
+        _allItemsCache = items.ToList();
         ClipboardItems.Clear();
         foreach (var item in items)
         {
@@ -106,9 +122,35 @@ public partial class MainViewModel : ObservableObject
     {
         Application.Current?.Dispatcher.Invoke(() =>
         {
+            // Update the cache as well
+            _allItemsCache.Insert(0, item);
+            
+            // Remove duplicates from cache
+            var duplicatesToRemove = _allItemsCache.Skip(1)
+                .Where(i => i.Content == item.Content && i.ContentType == item.ContentType)
+                .ToList();
+            foreach (var dup in duplicatesToRemove)
+            {
+                _allItemsCache.Remove(dup);
+            }
+
+            // Enforce cache limit
+            while (_allItemsCache.Count > MaxHistoryCount)
+            {
+                var lastNonPinned = _allItemsCache.LastOrDefault(i => !i.IsPinned);
+                if (lastNonPinned != null)
+                {
+                    _allItemsCache.Remove(lastNonPinned);
+                }
+                else
+                {
+                    break;
+                }
+            }
+
             ClipboardItems.Insert(0, item);
             
-            // Remove duplicates from old list
+            // Remove duplicates from visible list
             var toRemove = ClipboardItems.Skip(1)
                 .Where(i => i.Content == item.Content && i.ContentType == item.ContentType)
                 .ToList();
@@ -187,7 +229,11 @@ public partial class MainViewModel : ObservableObject
         bool wasSelected = item == SelectedItem;
         int index = ClipboardItems.IndexOf(item);
         
+        // Clear image cache to prevent memory leak
+        item.ClearImageCache();
+        
         _databaseService.DeleteItem(item.Id);
+        _allItemsCache.Remove(item);
         ClipboardItems.Remove(item);
         ItemCount = ClipboardItems.Count;
 
@@ -223,8 +269,8 @@ public partial class MainViewModel : ObservableObject
     private void ClearHistory()
     {
         var result = System.Windows.MessageBox.Show(
-            "Are you sure you want to clear all unpinned clipboard history? Pinned items will be kept.",
-            "Clear History",
+            AppConstants.Messages.ClearHistoryConfirm,
+            AppConstants.Messages.ClearHistoryTitle,
             System.Windows.MessageBoxButton.YesNo,
             System.Windows.MessageBoxImage.Warning);
         
@@ -239,8 +285,8 @@ public partial class MainViewModel : ObservableObject
     private void ClearOlderThanDay()
     {
         var result = System.Windows.MessageBox.Show(
-            "Are you sure you want to clear all clipboard history older than 1 day? Pinned items will be kept.",
-            "Clear Older Than 1 Day",
+            AppConstants.Messages.ClearOlderThanDayConfirm,
+            AppConstants.Messages.ClearOlderThanDayTitle,
             System.Windows.MessageBoxButton.YesNo,
             System.Windows.MessageBoxImage.Warning);
         
@@ -255,8 +301,8 @@ public partial class MainViewModel : ObservableObject
     private void ClearOlderThanWeek()
     {
         var result = System.Windows.MessageBox.Show(
-            "Are you sure you want to clear all clipboard history older than 1 week? Pinned items will be kept.",
-            "Clear Older Than 1 Week",
+            AppConstants.Messages.ClearOlderThanWeekConfirm,
+            AppConstants.Messages.ClearOlderThanWeekTitle,
             System.Windows.MessageBoxButton.YesNo,
             System.Windows.MessageBoxImage.Warning);
         
@@ -271,8 +317,8 @@ public partial class MainViewModel : ObservableObject
     private void ClearOlderThanMonth()
     {
         var result = System.Windows.MessageBox.Show(
-            "Are you sure you want to clear all clipboard history older than 1 month? Pinned items will be kept.",
-            "Clear Older Than 1 Month",
+            AppConstants.Messages.ClearOlderThanMonthConfirm,
+            AppConstants.Messages.ClearOlderThanMonthTitle,
             System.Windows.MessageBoxButton.YesNo,
             System.Windows.MessageBoxImage.Warning);
         
@@ -315,7 +361,20 @@ public partial class MainViewModel : ObservableObject
         _themeService.ApplyTheme(SelectedTheme);
         
         // Re-register the hotkey with the new value
-        _hotkeyService.RegisterHotkey(CurrentHotkey);
+        var result = _hotkeyService.RegisterHotkey(CurrentHotkey);
+        if (result != HotkeyRegistrationResult.Success)
+        {
+            var message = result switch
+            {
+                HotkeyRegistrationResult.Conflict => AppConstants.Messages.HotkeyConflictMessage(CurrentHotkey),
+                HotkeyRegistrationResult.InvalidHotkey => AppConstants.Messages.HotkeyInvalidMessage(CurrentHotkey),
+                _ => AppConstants.Messages.HotkeyFailedMessage(CurrentHotkey)
+            };
+            
+            System.Windows.MessageBox.Show(message, AppConstants.Messages.HotkeyConflictTitle, 
+                System.Windows.MessageBoxButton.OK, 
+                System.Windows.MessageBoxImage.Warning);
+        }
         
         IsSettingsOpen = false;
     }
@@ -336,36 +395,47 @@ public partial class MainViewModel : ObservableObject
 
     partial void OnSearchTextChanged(string value)
     {
-        ApplyFilters();
+        // Reset the debounce timer on each keystroke
+        _filterDebounceTimer.Stop();
+        _filterDebounceTimer.Start();
     }
 
     partial void OnSelectedTypeFilterChanged(string value)
     {
+        // Type filter change triggers immediate filtering (debounced as well)
+        _filterDebounceTimer.Stop();
+        _filterDebounceTimer.Start();
+    }
+
+    private void OnFilterDebounceTimerTick(object? sender, EventArgs e)
+    {
+        _filterDebounceTimer.Stop();
         ApplyFilters();
     }
 
     private void ApplyFilters()
     {
-        var items = _databaseService.GetItems(_configService.Config.MaxHistoryCount);
+        // Use cached items instead of querying the database
+        var items = _allItemsCache.ToList();
         
         // Apply type filter if selected
         if (!string.IsNullOrWhiteSpace(SelectedTypeFilter))
         {
             items = SelectedTypeFilter switch
             {
-                "Text" => items.Where(i => i.ContentType == ContentType.Text && i.FormatType == ContentFormatType.PlainText).ToList(),
-                "Image" => items.Where(i => i.ContentType == ContentType.Image).ToList(),
-                "Json" => items.Where(i => i.FormatType == ContentFormatType.Json).ToList(),
-                "Xml" => items.Where(i => i.FormatType == ContentFormatType.Xml).ToList(),
-                "Yaml" => items.Where(i => i.FormatType == ContentFormatType.Yaml).ToList(),
-                "Markdown" => items.Where(i => i.FormatType == ContentFormatType.Markdown).ToList(),
-                "Html" => items.Where(i => i.FormatType == ContentFormatType.Html || i.FormatType == ContentFormatType.HtmlCode).ToList(),
-                "Css" => items.Where(i => i.FormatType == ContentFormatType.Css).ToList(),
-                "CSharp" => items.Where(i => i.FormatType == ContentFormatType.CSharp).ToList(),
-                "JavaScript" => items.Where(i => i.FormatType == ContentFormatType.JavaScript).ToList(),
-                "Sql" => items.Where(i => i.FormatType == ContentFormatType.Sql).ToList(),
-                "Python" => items.Where(i => i.FormatType == ContentFormatType.Python).ToList(),
-                "Shell" => items.Where(i => i.FormatType == ContentFormatType.Bash || i.FormatType == ContentFormatType.PowerShell).ToList(),
+                AppConstants.FilterTypes.Text => items.Where(i => i.ContentType == ContentType.Text && i.FormatType == ContentFormatType.PlainText).ToList(),
+                AppConstants.FilterTypes.Image => items.Where(i => i.ContentType == ContentType.Image).ToList(),
+                AppConstants.FilterTypes.Json => items.Where(i => i.FormatType == ContentFormatType.Json).ToList(),
+                AppConstants.FilterTypes.Xml => items.Where(i => i.FormatType == ContentFormatType.Xml).ToList(),
+                AppConstants.FilterTypes.Yaml => items.Where(i => i.FormatType == ContentFormatType.Yaml).ToList(),
+                AppConstants.FilterTypes.Markdown => items.Where(i => i.FormatType == ContentFormatType.Markdown).ToList(),
+                AppConstants.FilterTypes.Html => items.Where(i => i.FormatType == ContentFormatType.Html || i.FormatType == ContentFormatType.HtmlCode).ToList(),
+                AppConstants.FilterTypes.Css => items.Where(i => i.FormatType == ContentFormatType.Css).ToList(),
+                AppConstants.FilterTypes.CSharp => items.Where(i => i.FormatType == ContentFormatType.CSharp).ToList(),
+                AppConstants.FilterTypes.JavaScript => items.Where(i => i.FormatType == ContentFormatType.JavaScript).ToList(),
+                AppConstants.FilterTypes.Sql => items.Where(i => i.FormatType == ContentFormatType.Sql).ToList(),
+                AppConstants.FilterTypes.Python => items.Where(i => i.FormatType == ContentFormatType.Python).ToList(),
+                AppConstants.FilterTypes.Shell => items.Where(i => i.FormatType == ContentFormatType.Bash || i.FormatType == ContentFormatType.PowerShell).ToList(),
                 _ => items
             };
         }
@@ -388,6 +458,7 @@ public partial class MainViewModel : ObservableObject
 
     public void Cleanup()
     {
+        _filterDebounceTimer.Stop();
         _clipboardMonitor.ClipboardChanged -= OnClipboardChanged;
     }
 }

@@ -5,7 +5,15 @@ using System.Windows.Interop;
 
 namespace DittoMeOff.Services;
 
-public class HotkeyService : IDisposable
+public enum HotkeyRegistrationResult
+{
+    Success,
+    InvalidHotkey,
+    Conflict,
+    UnknownError
+}
+
+public class HotkeyService : IHotkeyService
 {
     private const int WM_HOTKEY = 0x0312;
     private const int HOTKEY_ID = 9000;
@@ -40,7 +48,7 @@ public class HotkeyService : IDisposable
         _source?.AddHook(HwndHook);
     }
 
-    public bool RegisterHotkey(string hotkeyString)
+    public HotkeyRegistrationResult RegisterHotkey(string hotkeyString)
     {
         if (_isRegistered)
         {
@@ -48,10 +56,17 @@ public class HotkeyService : IDisposable
         }
 
         var (modifiers, key) = ParseHotkey(hotkeyString);
-        if (key == 0) return false;
+        if (key == 0) return HotkeyRegistrationResult.InvalidHotkey;
 
-        _isRegistered = RegisterHotKey(_windowHandle, HOTKEY_ID, (uint)modifiers, key);
-        return _isRegistered;
+        var result = RegisterHotKey(_windowHandle, HOTKEY_ID, (uint)modifiers, key);
+        if (result)
+        {
+            _isRegistered = true;
+            return HotkeyRegistrationResult.Success;
+        }
+        
+        // Registration failed - likely a conflict with another hotkey
+        return HotkeyRegistrationResult.Conflict;
     }
 
     public void UnregisterHotkey()

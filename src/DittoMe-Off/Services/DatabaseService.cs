@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 
 namespace DittoMeOff.Services;
 
-public class DatabaseService : IDisposable
+public class DatabaseService : IDatabaseService
 {
     private readonly string _dbPath;
     private SqliteConnection? _connection;
@@ -13,11 +13,11 @@ public class DatabaseService : IDisposable
     {
         var appDataPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "DittoMe-Off"
+            AppConstants.DatabaseFolderName
         );
         
         Directory.CreateDirectory(appDataPath);
-        _dbPath = Path.Combine(appDataPath, "clipboard.db");
+        _dbPath = Path.Combine(appDataPath, AppConstants.DatabaseFileName);
     }
 
     public void Initialize()
@@ -49,8 +49,7 @@ public class DatabaseService : IDisposable
         // Add FormatType column if it doesn't exist (migration for existing databases)
         try
         {
-            var alterSql = "ALTER TABLE ClipboardItems ADD COLUMN FormatType INTEGER DEFAULT 0";
-            using var alterCmd = new SqliteCommand(alterSql, _connection);
+            using var alterCmd = new SqliteCommand(AppConstants.SqlStatements.AlterTableAddFormatType, _connection);
             alterCmd.ExecuteNonQuery();
         }
         catch
@@ -63,13 +62,7 @@ public class DatabaseService : IDisposable
     {
         if (_connection == null) throw new InvalidOperationException("Database not initialized");
 
-        var sql = @"
-            INSERT INTO ClipboardItems (Content, ContentType, FormatType, Timestamp, IsPinned, AppSource, Size, PreviewText, ImageData)
-            VALUES (@Content, @ContentType, @FormatType, @Timestamp, @IsPinned, @AppSource, @Size, @PreviewText, @ImageData);
-            SELECT last_insert_rowid();
-        ";
-        
-        using var cmd = new SqliteCommand(sql, _connection);
+        using var cmd = new SqliteCommand(AppConstants.SqlStatements.InsertItem + "; SELECT last_insert_rowid();", _connection);
         cmd.Parameters.AddWithValue("@Content", item.Content);
         cmd.Parameters.AddWithValue("@ContentType", (int)item.ContentType);
         cmd.Parameters.AddWithValue("@FormatType", (int)item.FormatType);
@@ -89,14 +82,8 @@ public class DatabaseService : IDisposable
         if (_connection == null) throw new InvalidOperationException("Database not initialized");
 
         var items = new List<ClipboardItem>();
-        var sql = @"
-            SELECT Id, Content, ContentType, FormatType, Timestamp, IsPinned, AppSource, Size, PreviewText, ImageData
-            FROM ClipboardItems
-            ORDER BY IsPinned DESC, Timestamp DESC
-            LIMIT @Limit
-        ";
         
-        using var cmd = new SqliteCommand(sql, _connection);
+        using var cmd = new SqliteCommand(AppConstants.SqlStatements.GetItems, _connection);
         cmd.Parameters.AddWithValue("@Limit", limit);
         
         using var reader = cmd.ExecuteReader();
@@ -124,8 +111,7 @@ public class DatabaseService : IDisposable
     {
         if (_connection == null) throw new InvalidOperationException("Database not initialized");
 
-        var sql = "DELETE FROM ClipboardItems WHERE Id = @Id";
-        using var cmd = new SqliteCommand(sql, _connection);
+        using var cmd = new SqliteCommand(AppConstants.SqlStatements.DeleteItem, _connection);
         cmd.Parameters.AddWithValue("@Id", id);
         cmd.ExecuteNonQuery();
     }
@@ -134,8 +120,7 @@ public class DatabaseService : IDisposable
     {
         if (_connection == null) throw new InvalidOperationException("Database not initialized");
 
-        var sql = "UPDATE ClipboardItems SET IsPinned = NOT IsPinned WHERE Id = @Id";
-        using var cmd = new SqliteCommand(sql, _connection);
+        using var cmd = new SqliteCommand(AppConstants.SqlStatements.TogglePin, _connection);
         cmd.Parameters.AddWithValue("@Id", id);
         cmd.ExecuteNonQuery();
     }
@@ -145,8 +130,8 @@ public class DatabaseService : IDisposable
         if (_connection == null) throw new InvalidOperationException("Database not initialized");
 
         var sql = keepPinned 
-            ? "DELETE FROM ClipboardItems WHERE IsPinned = 0"
-            : "DELETE FROM ClipboardItems";
+            ? AppConstants.SqlStatements.ClearHistoryKeepPinned
+            : AppConstants.SqlStatements.ClearHistoryAll;
             
         using var cmd = new SqliteCommand(sql, _connection);
         cmd.ExecuteNonQuery();
@@ -158,28 +143,20 @@ public class DatabaseService : IDisposable
 
         var cutoffTime = DateTime.Now.AddDays(-days).Ticks;
         
-        if (keepPinned)
-        {
-            var sql = "DELETE FROM ClipboardItems WHERE IsPinned = 0 AND Timestamp < @CutoffTime";
-            using var cmd = new SqliteCommand(sql, _connection);
-            cmd.Parameters.AddWithValue("@CutoffTime", cutoffTime);
-            cmd.ExecuteNonQuery();
-        }
-        else
-        {
-            var sql = "DELETE FROM ClipboardItems WHERE Timestamp < @CutoffTime";
-            using var cmd = new SqliteCommand(sql, _connection);
-            cmd.Parameters.AddWithValue("@CutoffTime", cutoffTime);
-            cmd.ExecuteNonQuery();
-        }
+        var sql = keepPinned
+            ? AppConstants.SqlStatements.ClearItemsOlderThanKeepPinned
+            : AppConstants.SqlStatements.ClearItemsOlderThanAll;
+            
+        using var cmd = new SqliteCommand(sql, _connection);
+        cmd.Parameters.AddWithValue("@CutoffTime", cutoffTime);
+        cmd.ExecuteNonQuery();
     }
 
     public int GetItemCount()
     {
         if (_connection == null) throw new InvalidOperationException("Database not initialized");
 
-        var sql = "SELECT COUNT(*) FROM ClipboardItems";
-        using var cmd = new SqliteCommand(sql, _connection);
+        using var cmd = new SqliteCommand(AppConstants.SqlStatements.GetItemCount, _connection);
         return Convert.ToInt32(cmd.ExecuteScalar());
     }
 

@@ -4,13 +4,13 @@ using DittoMeOff.Models;
 
 namespace DittoMeOff.Services;
 
-public class ThemeService
+public class ThemeService : IThemeService
 {
-    private readonly ConfigService _configService;
+    private readonly IConfigService _configService;
     private ResourceDictionary? _currentThemeDictionary;
     private readonly string _themesFolder;
 
-    public ThemeService(ConfigService configService)
+    public ThemeService(IConfigService configService)
     {
         _configService = configService;
         _themesFolder = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Themes");

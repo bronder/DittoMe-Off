@@ -17,7 +17,7 @@ public class ClipboardItem
     public string? PreviewText { get; set; }
     public byte[]? ImageData { get; set; }
     
-    // Cached image source for preview
+    // Cached image source for preview - cleared when item is deleted to prevent memory leak
     private BitmapSource? _imageSource;
     public BitmapSource? ImageSource
     {
@@ -43,6 +43,14 @@ public class ClipboardItem
                 return null;
             }
         }
+    }
+    
+    /// <summary>
+    /// Clears the cached image to free memory. Should be called when the item is removed.
+    /// </summary>
+    public void ClearImageCache()
+    {
+        _imageSource = null;
     }
     
     public string DisplayText => ContentType switch

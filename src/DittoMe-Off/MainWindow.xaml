@@ -373,6 +373,32 @@
                                            Margin="0,0,8,0"
                                            IsHitTestVisible="False"
                                            Opacity="0.5"/>
+                                <!-- Clear search button -->
+                                <Button x:Name="ClearSearchButton"
+                                        Content="✕"
+                                        FontSize="8"
+                                        Width="16" Height="16"
+                                        HorizontalAlignment="Right"
+                                        Margin="0,0,4,0"
+                                        Cursor="Hand"
+                                        Click="ClearSearchButton_Click">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" CornerRadius="8">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                             </Grid>
                             
                             <!-- Filter Dropdown with rounded style -->
@@ -458,6 +484,7 @@
                     <ListView x:Name="ClipboardListView"
                               ItemsSource="{Binding ClipboardItems}"
                               SelectedItem="{Binding SelectedItem}"
+                              SelectionMode="Extended"
                               ItemTemplate="{StaticResource ClipboardItemTemplate}"
                               Background="Transparent"
                               BorderThickness="0"
@@ -475,6 +502,14 @@
                                 <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                             </Style>
                         </ListView.ItemContainerStyle>
+                        <ListView.ContextMenu>
+                            <ContextMenu Style="{DynamicResource DarkContextMenuStyle}">
+                                <MenuItem Header="Copy" Click="ContextMenuCopy_Click" Style="{DynamicResource DarkMenuItemStyle}"/>
+                                <MenuItem Header="Pin/Unpin" Click="ContextMenuPin_Click" Style="{DynamicResource DarkMenuItemStyle}"/>
+                                <Separator/>
+                                <MenuItem Header="Delete" Click="ContextMenuDelete_Click" Style="{DynamicResource DarkMenuItemStyle}"/>
+                            </ContextMenu>
+                        </ListView.ContextMenu>
                     </ListView>
                 </Border>
                 
@@ -697,43 +732,224 @@
                                                            VerticalAlignment="Center"/>
                                             </StackPanel>
                                             
-                                            <!-- Slider with labels -->
-                                            <Grid Margin="0,0,0,12">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="1" 
-                                                           Foreground="{DynamicResource SecondaryTextBrush}" 
-                                                           FontSize="11"
-                                                           VerticalAlignment="Center"/>
-                                                <Slider Grid.Column="1"
-                                                        Value="{Binding MaxHistoryCount}"
-                                                        Minimum="1"
-                                                        Maximum="10000"
-                                                        Margin="12,0"
-                                                        VerticalAlignment="Center"/>
-                                                <TextBlock Grid.Column="2" 
-                                                           Text="10000" 
-                                                           Foreground="{DynamicResource SecondaryTextBrush}" 
-                                                           FontSize="11"
-                                                           VerticalAlignment="Center"/>
-                                                
-                                                <!-- Real-time value badge - aligned with slider -->
-                                                <Border Grid.Column="3"
-                                                        Background="{DynamicResource AccentBrush}"
-                                                        CornerRadius="16"
-                                                        Padding="12,6"
-                                                        Margin="12,0,0,0"
-                                                        VerticalAlignment="Center">
-                                                    <TextBlock Foreground="White" FontWeight="SemiBold" FontSize="12">
-                                                        <Run Text="{Binding MaxHistoryCount, Mode=OneWay}"/>
-                                                        <Run Text=" items"/>
-                                                    </TextBlock>
-                                                </Border>
-                                            </Grid>
+                                            <!-- Preset buttons for common values -->
+                                            <WrapPanel Margin="0,0,0,12">
+                                                <Button Content="100"
+                                                        Click="PresetHistoryCount_Click"
+                                                        Tag="100"
+                                                        Margin="0,0,6,6"
+                                                        Cursor="Hand">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button">
+                                                            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                                                            <Setter Property="Padding" Value="12,6"/>
+                                                            <Setter Property="FontSize" Value="11"/>
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border x:Name="border"
+                                                                                Background="{TemplateBinding Background}"
+                                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                                CornerRadius="8"
+                                                                                Padding="{TemplateBinding Padding}">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                                                                <Setter Property="Foreground" Value="White"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                                <Button Content="500"
+                                                        Click="PresetHistoryCount_Click"
+                                                        Tag="500"
+                                                        Margin="0,0,6,6"
+                                                        Cursor="Hand">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button">
+                                                            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                                                            <Setter Property="Padding" Value="12,6"/>
+                                                            <Setter Property="FontSize" Value="11"/>
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border x:Name="border"
+                                                                                Background="{TemplateBinding Background}"
+                                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                                CornerRadius="8"
+                                                                                Padding="{TemplateBinding Padding}">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                                                                <Setter Property="Foreground" Value="White"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                                <Button Content="1000"
+                                                        Click="PresetHistoryCount_Click"
+                                                        Tag="1000"
+                                                        Margin="0,0,6,6"
+                                                        Cursor="Hand">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button">
+                                                            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                                                            <Setter Property="Padding" Value="12,6"/>
+                                                            <Setter Property="FontSize" Value="11"/>
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border x:Name="border"
+                                                                                Background="{TemplateBinding Background}"
+                                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                                CornerRadius="8"
+                                                                                Padding="{TemplateBinding Padding}">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                                                                <Setter Property="Foreground" Value="White"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                                <Button Content="2500"
+                                                        Click="PresetHistoryCount_Click"
+                                                        Tag="2500"
+                                                        Margin="0,0,6,6"
+                                                        Cursor="Hand">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button">
+                                                            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                                                            <Setter Property="Padding" Value="12,6"/>
+                                                            <Setter Property="FontSize" Value="11"/>
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border x:Name="border"
+                                                                                Background="{TemplateBinding Background}"
+                                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                                CornerRadius="8"
+                                                                                Padding="{TemplateBinding Padding}">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                                                                <Setter Property="Foreground" Value="White"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                                <Button Content="5000"
+                                                        Click="PresetHistoryCount_Click"
+                                                        Tag="5000"
+                                                        Margin="0,0,6,6"
+                                                        Cursor="Hand">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button">
+                                                            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                                                            <Setter Property="Padding" Value="12,6"/>
+                                                            <Setter Property="FontSize" Value="11"/>
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border x:Name="border"
+                                                                                Background="{TemplateBinding Background}"
+                                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                                CornerRadius="8"
+                                                                                Padding="{TemplateBinding Padding}">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentBrush}"/>
+                                                                                <Setter Property="Foreground" Value="White"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                            </WrapPanel>
+                                            
+                                            <!-- Custom number input box -->
+                                            <Border Background="{DynamicResource CardBrush}"
+                                                    BorderBrush="{DynamicResource BorderBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="6"
+                                                    Margin="0,0,0,12"
+                                                    VerticalAlignment="Center"
+                                                    HorizontalAlignment="Left">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox x:Name="HistoryCountInput"
+                                                             MinWidth="80"
+                                                             Padding="10,8"
+                                                             FontSize="12"
+                                                             FontWeight="SemiBold"
+                                                             Background="Transparent"
+                                                             BorderThickness="0"
+                                                             Foreground="{DynamicResource TextBrush}"
+                                                             VerticalContentAlignment="Center"
+                                                             PreviewTextInput="HistoryCountInput_PreviewTextInput"
+                                                             LostFocus="HistoryCountInput_LostFocus"
+                                                             KeyDown="HistoryCountInput_KeyDown"
+                                                             TextChanged="HistoryCountInput_TextChanged"/>
+                                                    <TextBlock Grid.Column="1" 
+                                                               Text=" items" 
+                                                               Foreground="{DynamicResource SecondaryTextBrush}" 
+                                                               FontSize="11"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0,10,0"/>
+                                                </Grid>
+                                            </Border>
                                         </StackPanel>
                                         
                                         <!-- Divider -->
@@ -888,31 +1104,30 @@
                                                            FontWeight="SemiBold"
                                                            VerticalAlignment="Center"/>
                                             </StackPanel>
-                                            <TextBox x:Name="HotkeyTextBox"
-                                                     Text="{Binding CurrentHotkey}"
-                                                     Width="250"
-                                                     HorizontalAlignment="Left"
-                                                     Margin="0,0,0,8"
-                                                     Padding="10,8"
-                                                     Background="{DynamicResource BackgroundBrush}"
-                                                     BorderThickness="1"
-                                                     BorderBrush="{DynamicResource BorderBrush}"
-                                                     Foreground="{DynamicResource TextBrush}"
-                                                     PreviewKeyDown="HotkeyTextBox_PreviewKeyDown"
-                                                     GotFocus="HotkeyTextBox_GotFocus"
-                                                     LostFocus="HotkeyTextBox_LostFocus">
-                                                <TextBox.Template>
-                                                    <ControlTemplate TargetType="TextBox">
-                                                        <Border Background="{TemplateBinding Background}"
-                                                                BorderBrush="{TemplateBinding BorderBrush}"
-                                                                BorderThickness="{TemplateBinding BorderThickness}"
-                                                                CornerRadius="6"
-                                                                Padding="{TemplateBinding Padding}">
-                                                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
-                                                        </Border>
-                                                    </ControlTemplate>
-                                                </TextBox.Template>
-                                            </TextBox>
+                                            <Border Background="{DynamicResource BackgroundBrush}"
+                                                    BorderBrush="{DynamicResource BorderBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="6"
+                                                    Margin="0,0,0,8"
+                                                    HorizontalAlignment="Left">
+                                                <TextBox x:Name="HotkeyTextBox"
+                                                         Text="{Binding CurrentHotkey}"
+                                                         Width="250"
+                                                         Padding="10,8"
+                                                         Background="Transparent"
+                                                         BorderThickness="0"
+                                                         Foreground="{DynamicResource TextBrush}"
+                                                         FontWeight="SemiBold"
+                                                         PreviewKeyDown="HotkeyTextBox_PreviewKeyDown"
+                                                         GotFocus="HotkeyTextBox_GotFocus"
+                                                         LostFocus="HotkeyTextBox_LostFocus">
+                                                    <TextBox.Template>
+                                                        <ControlTemplate TargetType="TextBox">
+                                                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" Margin="0"/>
+                                                        </ControlTemplate>
+                                                    </TextBox.Template>
+                                                </TextBox>
+                                            </Border>
                                             <TextBlock x:Name="HotkeyHint"
                                                        Text="Click here, then press your hotkey combination..."
                                                        Foreground="{DynamicResource SecondaryTextBrush}"

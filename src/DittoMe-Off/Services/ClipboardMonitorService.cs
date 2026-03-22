@@ -8,17 +8,17 @@ using DittoMeOff.Models;
 
 namespace DittoMeOff.Services;
 
-public class ClipboardMonitorService : IDisposable
+public class ClipboardMonitorService : IClipboardMonitorService
 {
     private System.Windows.Threading.DispatcherTimer? _timer;
-    private readonly ConfigService _configService;
-    private readonly DatabaseService _databaseService;
+    private readonly IConfigService _configService;
+    private readonly IDatabaseService _databaseService;
     private IntPtr _nextClipboardSequenceNumber;
     private bool _isMonitoring;
 
     public event EventHandler<ClipboardItem>? ClipboardChanged;
 
-    public ClipboardMonitorService(ConfigService configService, DatabaseService databaseService)
+    public ClipboardMonitorService(IConfigService configService, IDatabaseService databaseService)
     {
         _configService = configService;
         _databaseService = databaseService;

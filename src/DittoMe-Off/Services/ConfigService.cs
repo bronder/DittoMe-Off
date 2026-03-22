@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace DittoMeOff.Services;
 
-public class ConfigService
+public class ConfigService : IConfigService
 {
     private readonly string _configPath;
     private AppConfig _config;
@@ -15,11 +15,11 @@ public class ConfigService
     {
         var appDataPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "DittoMe-Off"
+            AppConstants.DatabaseFolderName
         );
         
         Directory.CreateDirectory(appDataPath);
-        _configPath = Path.Combine(appDataPath, "config.json");
+        _configPath = Path.Combine(appDataPath, AppConstants.ConfigFileName);
         _config = Load();
     }
 

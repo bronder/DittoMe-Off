@@ -15,8 +15,8 @@ namespace DittoMeOff;
 public partial class MainWindow : Window
 {
     private MainViewModel? _viewModel;
-    private HotkeyService? _hotkeyService;
-    private ConfigService? _configService;
+    private IHotkeyService? _hotkeyService;
+    private IConfigService? _configService;
     private bool _isExiting;
 
     [DllImport("user32.dll", SetLastError = true)]
@@ -31,7 +31,7 @@ public partial class MainWindow : Window
         InitializeComponent();
     }
 
-    public void Initialize(MainViewModel viewModel, HotkeyService hotkeyService, ConfigService configService, ThemeService themeService)
+    public void Initialize(MainViewModel viewModel, IHotkeyService hotkeyService, IConfigService configService, IThemeService themeService)
     {
         _viewModel = viewModel;
         _hotkeyService = hotkeyService;
@@ -66,13 +66,26 @@ public partial class MainWindow : Window
 
         // Apply saved splitter position after window size is set
         ApplySplitterPosition(config.SplitterPosition);
+
+        // Initialize the history count input box
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (HistoryCountInput != null && _viewModel != null)
+            {
+                HistoryCountInput.Text = _viewModel.MaxHistoryCount.ToString();
+            }
+        }), System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
     private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         // If SearchBox doesn't have focus and the key is a printable character,
         // redirect it to the SearchBox to start filtering
-        if (!SearchBox.IsFocused)
+        // But don't intercept if settings panel is open and user is typing in an input field
+        var focusedElement = FocusManager.GetFocusedElement(this);
+        bool isInSettingsPanel = IsInSettingsPanel(focusedElement as FrameworkElement);
+        
+        if (!SearchBox.IsFocused && !isInSettingsPanel)
         {
             // Check if the key is a printable character (A-Z, 0-9, space, punctuation, etc.)
             if (e.Key >= Key.A && e.Key <= Key.Z ||
@@ -128,11 +141,26 @@ public partial class MainWindow : Window
                 break;
 
             case Key.Delete:
-                if (ClipboardListView.SelectedItem is ClipboardItem deleteItem)
+                // Delete all selected items
+                var itemsToDelete = ClipboardListView.SelectedItems.Cast<ClipboardItem>().ToList();
+                foreach (var deleteItem in itemsToDelete)
                 {
                     _viewModel?.DeleteItemCommand.Execute(deleteItem);
                 }
                 e.Handled = true;
+                break;
+
+            case Key.P:
+                // Toggle pin for all selected items (Ctrl+P)
+                if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                {
+                    var itemsToToggle = ClipboardListView.SelectedItems.Cast<ClipboardItem>().ToList();
+                    foreach (var pinItem in itemsToToggle)
+                    {
+                        _viewModel?.TogglePinCommand.Execute(pinItem);
+                    }
+                    e.Handled = true;
+                }
                 break;
         }
     }
@@ -151,6 +179,15 @@ public partial class MainWindow : Window
         {
             _viewModel.SelectedTypeFilter = item.Tag?.ToString() ?? string.Empty;
         }
+    }
+
+    private void ClearSearchButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null)
+        {
+            _viewModel.SearchText = string.Empty;
+        }
+        SearchBox.Focus();
     }
 
     private void ClipboardListView_KeyDown(object sender, KeyEventArgs e)
@@ -190,11 +227,26 @@ public partial class MainWindow : Window
                 break;
 
             case Key.Delete:
-                if (ClipboardListView.SelectedItem is ClipboardItem deleteItem)
+                // Delete all selected items
+                var itemsToDeleteKeyDown = ClipboardListView.SelectedItems.Cast<ClipboardItem>().ToList();
+                foreach (var deleteItem in itemsToDeleteKeyDown)
                 {
                     _viewModel?.DeleteItemCommand.Execute(deleteItem);
                 }
                 e.Handled = true;
+                break;
+
+            case Key.P:
+                // Toggle pin for all selected items (Ctrl+P)
+                if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                {
+                    var itemsToToggleKeyDown = ClipboardListView.SelectedItems.Cast<ClipboardItem>().ToList();
+                    foreach (var pinItem in itemsToToggleKeyDown)
+                    {
+                        _viewModel?.TogglePinCommand.Execute(pinItem);
+                    }
+                    e.Handled = true;
+                }
                 break;
         }
     }
@@ -202,7 +254,11 @@ public partial class MainWindow : Window
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
         _hotkeyService?.Initialize(this);
-        _hotkeyService?.RegisterHotkey(_configService?.Config.Hotkey ?? "Ctrl+Shift+V");
+        var result = _hotkeyService?.RegisterHotkey(_configService?.Config.Hotkey ?? AppConstants.DefaultHotkey) ?? HotkeyRegistrationResult.InvalidHotkey;
+        if (result != HotkeyRegistrationResult.Success)
+        {
+            System.Diagnostics.Debug.WriteLine($"Hotkey registration failed: {result}");
+        }
         _hotkeyService!.HotkeyPressed += OnHotkeyPressed;
     }
 
@@ -400,23 +456,27 @@ public partial class MainWindow : Window
 
     private void ContextMenuCopy_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is MenuItem menuItem && menuItem.Parent is ContextMenu contextMenu && contextMenu.PlacementTarget is FrameworkElement element && element.Tag is ClipboardItem item)
+        // Use SelectedItem from the ListView for the context menu
+        if (_viewModel?.SelectedItem is ClipboardItem item)
         {
-            _viewModel?.CopyItemCommand.Execute(item);
+            _viewModel.CopyItemCommand.Execute(item);
         }
     }
 
     private void ContextMenuPin_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is MenuItem menuItem && menuItem.Parent is ContextMenu contextMenu && contextMenu.PlacementTarget is FrameworkElement element && element.Tag is ClipboardItem item)
+        // Use SelectedItem from the ListView for the context menu
+        if (_viewModel?.SelectedItem is ClipboardItem item)
         {
-            _viewModel?.TogglePinCommand.Execute(item);
+            _viewModel.TogglePinCommand.Execute(item);
         }
     }
 
     private void ContextMenuDelete_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is MenuItem menuItem && menuItem.Parent is ContextMenu contextMenu && contextMenu.PlacementTarget is FrameworkElement element && element.Tag is ClipboardItem item)
+        // Delete all selected items
+        var itemsToDelete = ClipboardListView.SelectedItems.Cast<ClipboardItem>().ToList();
+        foreach (var item in itemsToDelete)
         {
             _viewModel?.DeleteItemCommand.Execute(item);
         }
@@ -428,16 +488,16 @@ public partial class MainWindow : Window
         {
             var contextMenu = new ContextMenu();
             
-            var copyItem = new MenuItem { Header = "Copy" };
+            var copyItem = new MenuItem { Header = AppConstants.ContextMenu.Copy };
             copyItem.Click += (s, args) => _viewModel?.CopyItemCommand.Execute(item);
             
             var pinItem = new MenuItem 
             { 
-                Header = item.IsPinned ? "Unpin" : "Pin" 
+                Header = item.IsPinned ? AppConstants.ContextMenu.Unpin : AppConstants.ContextMenu.Pin 
             };
             pinItem.Click += (s, args) => _viewModel?.TogglePinCommand.Execute(item);
             
-            var deleteItem = new MenuItem { Header = "Delete" };
+            var deleteItem = new MenuItem { Header = AppConstants.ContextMenu.Delete };
             deleteItem.Click += (s, args) => _viewModel?.DeleteItemCommand.Execute(item);
             
             contextMenu.Items.Add(copyItem);
@@ -493,12 +553,12 @@ public partial class MainWindow : Window
 
     private void HotkeyTextBox_GotFocus(object sender, RoutedEventArgs e)
     {
-        HotkeyHint.Text = "Press your hotkey combination...";
+        HotkeyHint.Text = AppConstants.HotkeyHints.Recording;
     }
 
     private void HotkeyTextBox_LostFocus(object sender, RoutedEventArgs e)
     {
-        HotkeyHint.Text = "Click here, then press your hotkey combination...";
+        HotkeyHint.Text = AppConstants.HotkeyHints.Idle;
     }
 
     private void HotkeyTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -585,7 +645,7 @@ public partial class MainWindow : Window
             _viewModel.CurrentHotkey = hotkeyString;
         }
         
-        HotkeyHint.Text = $"Recording: {hotkeyString}";
+        HotkeyHint.Text = AppConstants.HotkeyHints.RecordingFormat(hotkeyString);
     }
 
     private void ClearHistoryCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -594,16 +654,16 @@ public partial class MainWindow : Window
         {
             switch (tag)
             {
-                case "all":
+                case AppConstants.ClearHistoryOptions.All:
                     _viewModel?.ClearHistoryCommand.Execute(null);
                     break;
-                case "day":
+                case AppConstants.ClearHistoryOptions.Day:
                     _viewModel?.ClearOlderThanDayCommand.Execute(null);
                     break;
-                case "week":
+                case AppConstants.ClearHistoryOptions.Week:
                     _viewModel?.ClearOlderThanWeekCommand.Execute(null);
                     break;
-                case "month":
+                case AppConstants.ClearHistoryOptions.Month:
                     _viewModel?.ClearOlderThanMonthCommand.Execute(null);
                     break;
             }
@@ -661,5 +721,103 @@ public partial class MainWindow : Window
     {
         Hide();
         SaveWindowPosition();
+    }
+
+    private void PresetHistoryCount_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.Button button && button.Tag is string tagValue)
+        {
+            if (int.TryParse(tagValue, out int value))
+            {
+                if (_viewModel != null)
+                {
+                    _viewModel.MaxHistoryCount = value;
+                    // Update the input box text
+                    if (HistoryCountInput != null)
+                    {
+                        HistoryCountInput.Text = value.ToString();
+                    }
+                }
+            }
+        }
+    }
+
+    private void HistoryCountInput_PreviewTextInput(object sender, TextCompositionEventArgs e)
+    {
+        // Only allow digits
+        e.Handled = !IsTextAllowed(e.Text);
+    }
+
+    private void HistoryCountInput_LostFocus(object sender, RoutedEventArgs e)
+    {
+        ValidateAndClampHistoryCount();
+    }
+
+    private void HistoryCountInput_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            ValidateAndClampHistoryCount();
+            // Move focus away from the input
+            Keyboard.ClearFocus();
+        }
+    }
+
+    private void HistoryCountInput_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        // Allow manual text editing without immediate binding update
+        // Value will be validated and applied on LostFocus or Enter key
+    }
+
+    private bool IsTextAllowed(string text)
+    {
+        foreach (char c in text)
+        {
+            if (!char.IsDigit(c))
+                return false;
+        }
+        return true;
+    }
+
+    private void ValidateAndClampHistoryCount()
+    {
+        if (HistoryCountInput == null || _viewModel == null) return;
+
+        if (int.TryParse(HistoryCountInput.Text, out int value))
+        {
+            // Clamp to valid range (minimum 1)
+            if (value < 1) value = 1;
+            _viewModel.MaxHistoryCount = value;
+            HistoryCountInput.Text = value.ToString();
+        }
+        else
+        {
+            // Invalid input - reset to current value
+            HistoryCountInput.Text = _viewModel.MaxHistoryCount.ToString();
+        }
+    }
+
+    private bool IsInSettingsPanel(FrameworkElement? element)
+    {
+        if (element == null) return false;
+        
+        // Check if the element or any of its ancestors is within the SettingsPanel
+        var current = element;
+        while (current != null)
+        {
+            if (current == SettingsPanel)
+                return true;
+            current = current.Parent as FrameworkElement;
+        }
+        return false;
+    }
+
+    private void RefreshHistoryCountInput()
+    {
+        // Update the history count input box with current value
+        if (HistoryCountInput != null && _viewModel != null)
+        {
+            HistoryCountInput.Text = _viewModel.MaxHistoryCount.ToString();
+        }
     }
 }

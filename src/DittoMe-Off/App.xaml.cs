@@ -1,53 +1,85 @@
 using System.Windows;
 using DittoMeOff.Services;
 using DittoMeOff.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DittoMeOff;
 
 public partial class App : Application
 {
-    private ConfigService? _configService;
-    private DatabaseService? _databaseService;
-    private ClipboardMonitorService? _clipboardMonitor;
-    private HotkeyService? _hotkeyService;
-    private ThemeService? _themeService;
-    private MainViewModel? _mainViewModel;
+    private ServiceProvider? _serviceProvider;
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
+        // Configure dependency injection
+        var services = new ServiceCollection();
+        ConfigureServices(services);
+        _serviceProvider = services.BuildServiceProvider();
+
         // Initialize services
-        _configService = new ConfigService();
-        _themeService = new ThemeService(_configService);
-        _themeService.LoadSavedTheme();
+        var configService = _serviceProvider.GetRequiredService<IConfigService>();
+        var themeService = _serviceProvider.GetRequiredService<IThemeService>();
+        themeService.LoadSavedTheme();
         
-        _databaseService = new DatabaseService();
-        _databaseService.Initialize();
+        var databaseService = _serviceProvider.GetRequiredService<IDatabaseService>();
+        databaseService.Initialize();
         
-        _clipboardMonitor = new ClipboardMonitorService(_configService, _databaseService);
-        _hotkeyService = new HotkeyService();
+        var clipboardMonitor = _serviceProvider.GetRequiredService<IClipboardMonitorService>();
+        var hotkeyService = _serviceProvider.GetRequiredService<IHotkeyService>();
         
-        _mainViewModel = new MainViewModel(_databaseService, _configService, _clipboardMonitor, _themeService, _hotkeyService);
+        var mainViewModel = _serviceProvider.GetRequiredService<MainViewModel>();
 
         // Create and show main window
-        var mainWindow = new MainWindow();
-        mainWindow.Initialize(_mainViewModel, _hotkeyService, _configService, _themeService);
+        var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
+        mainWindow.Initialize(mainViewModel, hotkeyService, configService, themeService);
         MainWindow = mainWindow;
         mainWindow.Show();
 
         // Start clipboard monitoring
-        _clipboardMonitor.Start();
+        clipboardMonitor.Start();
 
         // Handle auto-start registration
-        UpdateAutoStart(_configService.Config.AutoStart);
+        UpdateAutoStart(configService.Config.AutoStart);
+    }
+
+    private void ConfigureServices(IServiceCollection services)
+    {
+        // Register services
+        services.AddSingleton<IConfigService, ConfigService>();
+        services.AddSingleton<IDatabaseService, DatabaseService>();
+        services.AddSingleton<IThemeService, ThemeService>();
+        services.AddSingleton<IClipboardMonitorService, ClipboardMonitorService>();
+        services.AddSingleton<IHotkeyService, HotkeyService>();
+        
+        // Register ViewModels
+        services.AddSingleton<MainViewModel>();
+        
+        // Register Windows
+        services.AddTransient<MainWindow>();
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
-        _clipboardMonitor?.Dispose();
-        _hotkeyService?.Dispose();
-        _databaseService?.Dispose();
+        // Dispose all disposable services
+        if (_serviceProvider != null)
+        {
+            var disposableServices = new[]
+            {
+                typeof(IClipboardMonitorService),
+                typeof(IHotkeyService),
+                typeof(IDatabaseService)
+            };
+
+            foreach (var serviceType in disposableServices)
+            {
+                var service = _serviceProvider.GetService(serviceType) as IDisposable;
+                service?.Dispose();
+            }
+            
+            _serviceProvider.Dispose();
+        }
         
         base.OnExit(e);
     }

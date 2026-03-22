@@ -2,9 +2,9 @@ namespace DittoMeOff.Models;
 
 public class AppConfig
 {
-    public int MaxHistoryCount { get; set; } = 100;
-    public string Hotkey { get; set; } = "Ctrl+Shift+V";
-    public bool AutoStart { get; set; } = false;
+    public int MaxHistoryCount { get; set; } = AppConstants.DefaultMaxHistoryCount;
+    public string Hotkey { get; set; } = AppConstants.DefaultHotkey;
+    public bool AutoStart { get; set; } = AppConstants.DefaultAutoStart;
     public AppTheme Theme { get; set; } = AppTheme.Light;
     public long MaxItemSize { get; set; } = 10 * 1024 * 1024; // 10MB
     public List<string> ExcludedApps { get; set; } = new();
