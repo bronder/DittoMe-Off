@@ -1,8 +1,20 @@
-# Release v1.6
+# Release v1.7.1
 
 ## What's New
 
 _(Add your release notes here)_
+
+---
+
+# Release v1.6
+
+## What's New
+
+### Auto-Paste Feature
+- **One-key copy and paste** - Press Enter to copy an item AND automatically paste it into the previously active application
+- When you press your global hotkey, the app now captures which window was active
+- After selecting an item with Enter, the content is pasted directly into your target application
+- Uses Windows API (GetForegroundWindow, SetForegroundWindow, keybd_event) for reliable pasting
 
 ---
 

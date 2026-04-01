@@ -18,9 +18,23 @@ public partial class MainWindow : Window
     private IHotkeyService? _hotkeyService;
     private IConfigService? _configService;
     private bool _isExiting;
+    private IntPtr _previousForegroundWindow = IntPtr.Zero;
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+
+    private const byte VK_CONTROL = 0x11;
+    private const byte VK_V = 0x56;
+    private const uint KEYEVENTF_KEYUP = 0x0002;
 
     private static readonly IntPtr HWND_TOP = IntPtr.Zero;
     private const uint SWP_NOZORDER = 0x0004;
@@ -164,8 +178,26 @@ public partial class MainWindow : Window
                         }
                     }
                     
+                    var previousWindow = _previousForegroundWindow;
                     _viewModel?.CopyItemCommand.Execute(item);
                     Hide();
+                    
+                    // If we have a previous window, paste to it
+                    if (previousWindow != IntPtr.Zero)
+                    {
+                        // Small delay to ensure clipboard is updated and window is hidden
+                        System.Threading.Thread.Sleep(50);
+                        
+                        // Restore focus to the previous window
+                        if (SetForegroundWindow(previousWindow))
+                        {
+                            // Send Ctrl+V to paste
+                            keybd_event(VK_CONTROL, 0, 0, UIntPtr.Zero);
+                            keybd_event(VK_V, 0, 0, UIntPtr.Zero);
+                            keybd_event(VK_V, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+                            keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+                        }
+                    }
                 }
                 e.Handled = true;
                 break;
@@ -243,6 +275,8 @@ public partial class MainWindow : Window
             }
             else
             {
+                // Store the foreground window before we take focus
+                _previousForegroundWindow = GetForegroundWindow();
                 ShowWindow();
             }
         });

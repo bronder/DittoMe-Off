@@ -88,3 +88,4 @@ AssemblyInfo.cs
 *.zip
 *.rar
 *.7z
+.aider*

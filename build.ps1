@@ -1,10 +1,10 @@
 # DittoMe-Off Build Script
-# Usage: .\build.ps1 [-SkipBumpVersion] [--local-only]
+# Usage: .\build.ps1 [-BumpVersion] [--local-only]
 
 param(
     [string]$Configuration = "Release",
-    [string]$Version = "1.6",
-    [switch]$SkipBumpVersion
+    [string]$Version = "1.7.1",
+    [switch]$BumpVersion
 )
 
 $ErrorActionPreference = "Stop"
@@ -35,12 +35,6 @@ function Bump-Version {
         
         Write-Host "New version: $newVersion" -ForegroundColor Green
         
-        # Update build.ps1 version
-        $scriptContent = Get-Content $PSCommandPath -Raw
-        $scriptContent = $scriptContent -replace '(?<=Version = ")[\d.]+(?=")', $newVersion
-        Set-Content -Path $PSCommandPath -Value $scriptContent
-        Write-Host "Updated build.ps1" -ForegroundColor Green
-        
         Write-Host ""
         Write-Host "Version bumped to $newVersion" -ForegroundColor Green
         
@@ -52,8 +46,8 @@ function Bump-Version {
     }
 }
 
-# Check if bumping version (default is to bump)
-if (-not $SkipBumpVersion) {
+# Check if bumping version (default is to NOT bump)
+if ($BumpVersion) {
     $newVer = Bump-Version
     $Version = $newVer
 }
@@ -153,6 +147,7 @@ Write-Host "  Output dir: $outputDir"
 if (-not $skipRelease) {
     Write-Host "  GitHub release: Published"
 }
+
 
 
 
