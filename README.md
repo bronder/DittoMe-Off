@@ -95,6 +95,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ---
 
-**Version: v1.7.2**
+**Version: v1.7.3**
 
 
