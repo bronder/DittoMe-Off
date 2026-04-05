@@ -1,3 +1,11 @@
+# Release v1.7.2
+
+## Bug Fixes
+
+- **Fixed window position drift** - Window no longer creeps toward the top-left corner on each show/hide cycle. The root cause was a DPI mismatch: `SetWindowPos` (Win32) expects physical pixels but was receiving WPF device-independent pixels (DIPs), causing progressive position corruption on displays with DPI scaling > 100%.
+
+---
+
 # Release v1.7.1
 
 ## What's New

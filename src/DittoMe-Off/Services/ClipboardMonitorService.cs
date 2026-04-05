@@ -1,5 +1,4 @@
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Interop;
@@ -34,7 +33,7 @@ public class ClipboardMonitorService : IClipboardMonitorService
             return;
         }
 
-        _nextClipboardSequenceNumber = GetClipboardSequenceNumber();
+        _nextClipboardSequenceNumber = NativeMethods.GetClipboardSequenceNumber();
         
         _timer = new System.Windows.Threading.DispatcherTimer
         {
@@ -63,7 +62,7 @@ public class ClipboardMonitorService : IClipboardMonitorService
     {
         try
         {
-            var currentSequence = GetClipboardSequenceNumber();
+            var currentSequence = NativeMethods.GetClipboardSequenceNumber();
             if (currentSequence != _nextClipboardSequenceNumber)
             {
                 _nextClipboardSequenceNumber = currentSequence;
@@ -186,25 +185,20 @@ public class ClipboardMonitorService : IClipboardMonitorService
         var count = _databaseService.GetItemCount();
         if (count > _configService.Config.MaxHistoryCount)
         {
-            _databaseService.ClearHistory(keepPinned: true);
+            // Only delete the oldest excess items, not all non-pinned items
+            _databaseService.DeleteOldestExcessItems(_configService.Config.MaxHistoryCount, keepPinned: true);
         }
     }
-
-    [DllImport("user32.dll")]
-    private static extern IntPtr GetForegroundWindow();
-
-    [DllImport("user32.dll")]
-    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
     private string? GetSourceAppName()
     {
         try
         {
-            IntPtr hwnd = GetForegroundWindow();
+            IntPtr hwnd = NativeMethods.GetForegroundWindow();
             if (hwnd == IntPtr.Zero)
                 return null;
 
-            GetWindowThreadProcessId(hwnd, out uint processId);
+            NativeMethods.GetWindowThreadProcessId(hwnd, out uint processId);
             if (processId == 0)
                 return null;
 
@@ -223,21 +217,6 @@ public class ClipboardMonitorService : IClipboardMonitorService
             // Invalid process ID
         }
         return null;
-    }
-
-    [DllImport("user32.dll")]
-    private static extern IntPtr GetClipboardSequenceNumber(IntPtr hWnd);
-
-    private static IntPtr GetClipboardSequenceNumber()
-    {
-        try
-        {
-            return GetClipboardSequenceNumber(IntPtr.Zero);
-        }
-        catch
-        {
-            return IntPtr.Zero;
-        }
     }
 
     public void Dispose()

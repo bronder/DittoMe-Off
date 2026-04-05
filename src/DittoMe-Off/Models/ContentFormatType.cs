@@ -27,5 +27,6 @@ public enum ContentFormatType
     Swift = 25,
     Kotlin = 26,
     Yaml = 27,
-    Markdown = 28
+    Markdown = 28,
+    Url = 29
 }

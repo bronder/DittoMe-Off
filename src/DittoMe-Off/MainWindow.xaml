@@ -427,6 +427,7 @@
                                 <ComboBoxItem Content="Python" Tag="Python"/>
                                 <ComboBoxItem Content="Shell" Tag="Shell"/>
                                 <ComboBoxItem Content="SQL" Tag="Sql"/>
+                                <ComboBoxItem Content="URL" Tag="Url"/>
                                 <ComboBoxItem Content="Text" Tag="Text"/>
                                 <ComboBoxItem Content="XML" Tag="Xml"/>
                                 <ComboBoxItem Content="YAML" Tag="Yaml"/>

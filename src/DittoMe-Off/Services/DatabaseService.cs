@@ -168,6 +168,31 @@ public class DatabaseService : IDatabaseService
         return Convert.ToInt32(cmd.ExecuteScalar());
     }
 
+    public void DeleteOldestExcessItems(int keepCount, bool keepPinned = true)
+    {
+        if (_connection == null) throw new InvalidOperationException("Database not initialized");
+
+        if (keepPinned)
+        {
+            using var cmd = new SqliteCommand(AppConstants.SqlStatements.DeleteOldestExcessItems, _connection);
+            cmd.Parameters.AddWithValue("@KeepCount", keepCount);
+            cmd.ExecuteNonQuery();
+        }
+        else
+        {
+            // If not keeping pinned, just use the keepCount directly on all items
+            var sql = @"DELETE FROM ClipboardItems 
+                        WHERE Id NOT IN (
+                            SELECT Id FROM ClipboardItems 
+                            ORDER BY Timestamp DESC 
+                            LIMIT @KeepCount
+                        )";
+            using var cmd = new SqliteCommand(sql, _connection);
+            cmd.Parameters.AddWithValue("@KeepCount", keepCount);
+            cmd.ExecuteNonQuery();
+        }
+    }
+
     public void Dispose()
     {
         _connection?.Close();

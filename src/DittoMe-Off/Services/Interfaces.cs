@@ -19,6 +19,7 @@ public interface IDatabaseService : IDisposable
     void ClearHistory(bool keepPinned = true);
     void ClearItemsOlderThan(int days, bool keepPinned = true);
     int GetItemCount();
+    void DeleteOldestExcessItems(int keepCount, bool keepPinned = true);
 }
 
 public interface IClipboardMonitorService : IDisposable

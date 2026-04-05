@@ -20,9 +20,6 @@ public partial class MainWindow : Window
     private bool _isExiting;
     private IntPtr _previousForegroundWindow = IntPtr.Zero;
 
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
-
     [DllImport("user32.dll")]
     private static extern IntPtr GetForegroundWindow();
 
@@ -30,15 +27,73 @@ public partial class MainWindow : Window
     private static extern bool SetForegroundWindow(IntPtr hWnd);
 
     [DllImport("user32.dll")]
+    private static extern bool IsWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr lpdwProcessId);
+
+    [DllImport("kernel32.dll")]
+    private static extern uint GetCurrentThreadId();
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
     private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
 
-    private const byte VK_CONTROL = 0x11;
-    private const byte VK_V = 0x56;
-    private const uint KEYEVENTF_KEYUP = 0x0002;
+    private const int SW_RESTORE = 9;
+    private const uint KEYEVENTF_KEYDOWN = 0x0000;
 
-    private static readonly IntPtr HWND_TOP = IntPtr.Zero;
-    private const uint SWP_NOZORDER = 0x0004;
-    private const uint SWP_SHOWWINDOW = 0x0040;
+    // WM_NCHITTEST hit test values for borderless window resizing
+    private const int WM_NCHITTEST = 0x0084;
+    private const int HTLEFT = 10;
+    private const int HTRIGHT = 11;
+    private const int HTTOP = 12;
+    private const int HTTOPLEFT = 13;
+    private const int HTTOPRIGHT = 14;
+    private const int HTBOTTOM = 15;
+    private const int HTBOTTOMLEFT = 16;
+    private const int HTBOTTOMRIGHT = 17;
+    private const int HTCLIENT = 1;
+    private const int ResizeBorderSize = 6;
+
+    [DllImport("user32.dll")]
+    private static extern bool GetCursorPos(out POINT lpPoint);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct POINT
+    {
+        public int X;
+        public int Y;
+    }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct INPUT
+    {
+        public uint type;
+        public KEYBDINPUT ki;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct KEYBDINPUT
+    {
+        public ushort wVk;
+        public ushort wScan;
+        public uint dwFlags;
+        public uint time;
+        public IntPtr dwExtraInfo;
+    }
+
+    private const uint INPUT_KEYBOARD = 1;
+    private const uint KEYEVENTF_KEYUP = 0x0002;
+    private const ushort VK_CONTROL = 0x11;
+    private const ushort VK_V = 0x56;
 
     public MainWindow()
     {
@@ -182,22 +237,8 @@ public partial class MainWindow : Window
                     _viewModel?.CopyItemCommand.Execute(item);
                     Hide();
                     
-                    // If we have a previous window, paste to it
-                    if (previousWindow != IntPtr.Zero)
-                    {
-                        // Small delay to ensure clipboard is updated and window is hidden
-                        System.Threading.Thread.Sleep(50);
-                        
-                        // Restore focus to the previous window
-                        if (SetForegroundWindow(previousWindow))
-                        {
-                            // Send Ctrl+V to paste
-                            keybd_event(VK_CONTROL, 0, 0, UIntPtr.Zero);
-                            keybd_event(VK_V, 0, 0, UIntPtr.Zero);
-                            keybd_event(VK_V, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-                            keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
-                        }
-                    }
+                    // If we have a previous window, paste to it asynchronously
+                    PasteToWindowAsync(previousWindow);
                 }
                 e.Handled = true;
                 break;
@@ -232,6 +273,127 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Sends a single key press (down + up) using SendInput.
+    /// </summary>
+    private static void SendKeyPress(ushort vk)
+    {
+        INPUT[] inputs = new INPUT[2];
+        inputs[0].type = INPUT_KEYBOARD;
+        inputs[0].ki = new KEYBDINPUT { wVk = vk };
+        inputs[1].type = INPUT_KEYBOARD;
+        inputs[1].ki = new KEYBDINPUT { wVk = vk, dwFlags = KEYEVENTF_KEYUP };
+        SendInput(2, inputs, Marshal.SizeOf(typeof(INPUT)));
+    }
+
+    /// <summary>
+    /// Sends a key combination (modifier + key) using SendInput.
+    /// </summary>
+    private static void SendKeyCombo(ushort modifierVk, ushort keyVk)
+    {
+        INPUT[] inputs = new INPUT[4];
+        inputs[0].type = INPUT_KEYBOARD;
+        inputs[0].ki = new KEYBDINPUT { wVk = modifierVk };
+        inputs[1].type = INPUT_KEYBOARD;
+        inputs[1].ki = new KEYBDINPUT { wVk = keyVk };
+        inputs[2].type = INPUT_KEYBOARD;
+        inputs[2].ki = new KEYBDINPUT { wVk = keyVk, dwFlags = KEYEVENTF_KEYUP };
+        inputs[3].type = INPUT_KEYBOARD;
+        inputs[3].ki = new KEYBDINPUT { wVk = modifierVk, dwFlags = KEYEVENTF_KEYUP };
+        SendInput(4, inputs, Marshal.SizeOf(typeof(INPUT)));
+    }
+
+    /// <summary>
+    /// Asynchronously pastes clipboard content to the target window using SendInput.
+    /// Uses Task.Delay instead of Thread.Sleep to avoid blocking the UI thread.
+    /// </summary>
+    private async void PasteToWindowAsync(IntPtr targetWindow)
+    {
+        if (targetWindow == IntPtr.Zero)
+        {
+            System.Diagnostics.Debug.WriteLine("PasteToWindowAsync: targetWindow is Zero, skipping paste.");
+            return;
+        }
+
+        try
+        {
+            // Delay to ensure clipboard is updated and our window is fully hidden
+            await Task.Delay(150);
+
+            // Validate the window still exists before attempting paste
+            if (!IsWindow(targetWindow))
+            {
+                System.Diagnostics.Debug.WriteLine($"PasteToWindowAsync: target window {targetWindow} no longer exists.");
+                return;
+            }
+
+            System.Diagnostics.Debug.WriteLine($"PasteToWindowAsync: attempting paste to window {targetWindow}");
+
+            // Attach our thread input to the target window's thread so SetForegroundWindow works reliably
+            uint foregroundThreadId = GetWindowThreadProcessId(GetForegroundWindow(), IntPtr.Zero);
+            uint targetThreadId = GetWindowThreadProcessId(targetWindow, IntPtr.Zero);
+            uint currentThreadId = GetCurrentThreadId();
+
+            bool attached = false;
+            if (foregroundThreadId != targetThreadId)
+            {
+                // Detach from current foreground thread if needed
+                if (foregroundThreadId != currentThreadId)
+                {
+                    AttachThreadInput(currentThreadId, foregroundThreadId, false);
+                }
+                // Attach to target window's thread
+                attached = AttachThreadInput(currentThreadId, targetThreadId, true);
+                System.Diagnostics.Debug.WriteLine($"PasteToWindowAsync: AttachThreadInput result = {attached}");
+            }
+
+            try
+            {
+                // Restore the target window if it was minimized
+                ShowWindow(targetWindow, SW_RESTORE);
+
+                // Bring to foreground
+                bool setForeground = SetForegroundWindow(targetWindow);
+                System.Diagnostics.Debug.WriteLine($"PasteToWindowAsync: SetForegroundWindow result = {setForeground}");
+
+                // Brief pause to let the target window process the focus change
+                await Task.Delay(100);
+
+                // Verify we successfully set the foreground window
+                var currentForeground = GetForegroundWindow();
+                System.Diagnostics.Debug.WriteLine($"PasteToWindowAsync: current foreground = {currentForeground}, target = {targetWindow}");
+
+                if (currentForeground == targetWindow)
+                {
+                    // Send Ctrl+V using keybd_event (more reliable for some apps than SendInput)
+                    keybd_event((byte)VK_CONTROL, 0, KEYEVENTF_KEYDOWN, UIntPtr.Zero);
+                    keybd_event((byte)VK_V, 0, KEYEVENTF_KEYDOWN, UIntPtr.Zero);
+                    keybd_event((byte)VK_V, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+                    keybd_event((byte)VK_CONTROL, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+                    System.Diagnostics.Debug.WriteLine("PasteToWindowAsync: Ctrl+V sent successfully.");
+                }
+                else
+                {
+                    // Fallback: try SendInput approach
+                    System.Diagnostics.Debug.WriteLine("PasteToWindowAsync: SetForegroundWindow didn't work, trying SendInput fallback.");
+                    SendKeyCombo(VK_CONTROL, VK_V);
+                }
+            }
+            finally
+            {
+                // Always detach thread input
+                if (attached)
+                {
+                    AttachThreadInput(currentThreadId, targetThreadId, false);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"PasteToWindowAsync failed: {ex.Message}");
+        }
+    }
+
     private void FilterCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (FilterCombo.SelectedItem is ComboBoxItem item && _viewModel != null)
@@ -263,6 +425,46 @@ public partial class MainWindow : Window
             System.Diagnostics.Debug.WriteLine($"Hotkey registration failed: {result}");
         }
         _hotkeyService!.HotkeyPressed += OnHotkeyPressed;
+
+        // Add resize edge detection hook for borderless window
+        var hwndSource = PresentationSource.FromVisual(this) as HwndSource;
+        hwndSource?.AddHook(WndProcResizeHook);
+    }
+
+    /// <summary>
+    /// Handles WM_NCHITTEST to enable edge resizing for the borderless window.
+    /// When the mouse is near a window edge, returns the appropriate hit test value
+    /// so Windows handles the resize cursor and drag behavior automatically.
+    /// </summary>
+    private IntPtr WndProcResizeHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg != WM_NCHITTEST)
+            return IntPtr.Zero;
+
+        // Get mouse position in screen coordinates from lParam
+        int mouseX = lParam.ToInt32() & 0xFFFF;
+        int mouseY = lParam.ToInt32() >> 16;
+
+        // Get window position and size in screen coordinates
+        var windowRect = new Rect(PointToScreen(new System.Windows.Point(0, 0)), new System.Windows.Size(ActualWidth, ActualHeight));
+
+        // Check if mouse is within the resize border zone
+        bool onLeft = mouseX >= windowRect.Left && mouseX <= windowRect.Left + ResizeBorderSize;
+        bool onRight = mouseX >= windowRect.Right - ResizeBorderSize && mouseX <= windowRect.Right;
+        bool onTop = mouseY >= windowRect.Top && mouseY <= windowRect.Top + ResizeBorderSize;
+        bool onBottom = mouseY >= windowRect.Bottom - ResizeBorderSize && mouseY <= windowRect.Bottom;
+
+        // Return appropriate hit test value for corners and edges
+        if (onTop && onLeft) { handled = true; return (IntPtr)HTTOPLEFT; }
+        if (onTop && onRight) { handled = true; return (IntPtr)HTTOPRIGHT; }
+        if (onBottom && onLeft) { handled = true; return (IntPtr)HTBOTTOMLEFT; }
+        if (onBottom && onRight) { handled = true; return (IntPtr)HTBOTTOMRIGHT; }
+        if (onLeft) { handled = true; return (IntPtr)HTLEFT; }
+        if (onRight) { handled = true; return (IntPtr)HTRIGHT; }
+        if (onTop) { handled = true; return (IntPtr)HTTOP; }
+        if (onBottom) { handled = true; return (IntPtr)HTBOTTOM; }
+
+        return IntPtr.Zero;
     }
 
     private void OnHotkeyPressed(object? sender, EventArgs e)
@@ -326,42 +528,23 @@ public partial class MainWindow : Window
         
         // Force manual positioning - must be set before Show()
         WindowStartupLocation = WindowStartupLocation.Manual;
-        
-        // Get cursor position
-        var cursorPos = System.Windows.Forms.Cursor.Position;
-        
-        // Position window before showing
-        Left = cursorPos.X;
-        Top = cursorPos.Y;
-        
-        // Adjust if window would be off-screen
-        EnsureWindowOnScreen();
-        
-        Show();
-        
-        // Use SetWindowPos to force the position AND size after show
-        Dispatcher.BeginInvoke(new Action(() =>
+
+        // Apply configured size using WPF properties (DIPs, not physical pixels).
+        // Do NOT use SetWindowPos with (int)Left/(int)Top here — those WPF values
+        // are in device-independent pixels but SetWindowPos expects physical pixels,
+        // which causes the window to drift toward (0,0) on DPI-scaled displays.
+        var config = _configService?.Config;
+        if (config != null)
         {
-            var hwnd = new WindowInteropHelper(this).Handle;
-            if (hwnd != IntPtr.Zero)
-            {
-                // Get current config values to ensure we're using the right size
-                var config = _configService?.Config;
-                int width = config != null && config.WindowWidth > 0 ? (int)config.WindowWidth : (int)Width;
-                int height = config != null && config.WindowHeight > 0 ? (int)config.WindowHeight : (int)Height;
-                
-                SetWindowPos(hwnd, HWND_TOP, (int)Left, (int)Top, width, height, SWP_NOZORDER | SWP_SHOWWINDOW);
-                
-                // Also update WPF properties to match
-                Width = width;
-                Height = height;
-            }
-        }), System.Windows.Threading.DispatcherPriority.Background);
-        
+            if (config.WindowWidth > 0) Width = config.WindowWidth;
+            if (config.WindowHeight > 0) Height = config.WindowHeight;
+        }
+
+        Show();
         Activate();
         
         // Select the top item when window is shown
-        if (_viewModel?.ClipboardItems.Count > 0)
+        if (_viewModel?.ClipboardItems is { Count: > 0 })
         {
             ClipboardListView.SelectedIndex = 0;
             _viewModel.SelectedItem = _viewModel.ClipboardItems[0];
@@ -369,49 +552,142 @@ public partial class MainWindow : Window
         
         ClipboardListView.Focus();
     }
-    
-    private void EnsureWindowOnScreen()
+
+    /// <summary>
+    /// Positions the window centered at the mouse cursor with smart fallback
+    /// positioning when the window would extend beyond screen boundaries.
+    /// Fallback hierarchy: centered → below → above → nearest edge
+    /// </summary>
+    private void PositionWindowAtCursor()
     {
-        // Get the screen containing the window's top-left corner
-        var windowRect = new Rect(Left, Top, Width, Height);
+        // Get cursor position using Win32 API (more reliable than WinForms)
+        GetCursorPos(out var cursorPos);
         
-        // Get working area of the screen containing the window
-        var screenBounds = GetScreenWorkingArea((int)Left, (int)Top);
+        // Get the window dimensions (prefer config values if available)
+        var config = _configService?.Config;
+        double windowWidth = config != null && config.WindowWidth > 0 ? config.WindowWidth : Width;
+        double windowHeight = config != null && config.WindowHeight > 0 ? config.WindowHeight : Height;
         
-        // Adjust Left if window extends beyond right edge
-        if (Left + Width > screenBounds.Right)
+        // Get the working area of the screen containing the cursor
+        var screenBounds = GetScreenWorkingArea(cursorPos.X, cursorPos.Y);
+        
+        // Calculate centered position (window center at cursor)
+        double centeredLeft = cursorPos.X - (windowWidth / 2);
+        double centeredTop = cursorPos.Y - (windowHeight / 2);
+        
+        // Priority 1: Try centered at cursor
+        if (DoesWindowFitOnScreen(centeredLeft, centeredTop, windowWidth, windowHeight, screenBounds))
         {
-            Left = screenBounds.Right - Width;
+            Left = centeredLeft;
+            Top = centeredTop;
+            EnsureWindowOnScreen(screenBounds, windowWidth, windowHeight);
+            return;
         }
         
-        // Adjust Top if window extends beyond bottom edge
-        if (Top + Height > screenBounds.Bottom)
+        // Priority 2: Try positioned below cursor (top-left at cursor)
+        double belowLeft = cursorPos.X;
+        double belowTop = cursorPos.Y;
+        if (DoesWindowFitOnScreen(belowLeft, belowTop, windowWidth, windowHeight, screenBounds))
         {
-            Top = screenBounds.Bottom - Height;
+            Left = belowLeft;
+            Top = belowTop;
+            EnsureWindowOnScreen(screenBounds, windowWidth, windowHeight);
+            return;
         }
         
-        // Adjust Left if window extends beyond left edge
+        // Priority 3: Try positioned above cursor
+        double aboveLeft = cursorPos.X - windowWidth;
+        double aboveTop = cursorPos.Y - windowHeight;
+        if (DoesWindowFitOnScreen(aboveLeft, aboveTop, windowWidth, windowHeight, screenBounds))
+        {
+            Left = aboveLeft;
+            Top = aboveTop;
+            EnsureWindowOnScreen(screenBounds, windowWidth, windowHeight);
+            return;
+        }
+        
+        // Priority 4: Try centered horizontally, below cursor vertically
+        double hCenterBelowLeft = cursorPos.X - (windowWidth / 2);
+        double hCenterBelowTop = cursorPos.Y;
+        if (DoesWindowFitOnScreen(hCenterBelowLeft, hCenterBelowTop, windowWidth, windowHeight, screenBounds))
+        {
+            Left = hCenterBelowLeft;
+            Top = hCenterBelowTop;
+            EnsureWindowOnScreen(screenBounds, windowWidth, windowHeight);
+            return;
+        }
+        
+        // Priority 5: Try centered horizontally, above cursor vertically
+        double hCenterAboveLeft = cursorPos.X - (windowWidth / 2);
+        double hCenterAboveTop = cursorPos.Y - windowHeight;
+        if (DoesWindowFitOnScreen(hCenterAboveLeft, hCenterAboveTop, windowWidth, windowHeight, screenBounds))
+        {
+            Left = hCenterAboveLeft;
+            Top = hCenterAboveTop;
+            EnsureWindowOnScreen(screenBounds, windowWidth, windowHeight);
+            return;
+        }
+        
+        // Fallback: Position at cursor and let EnsureWindowOnScreen clamp to nearest edge
+        Left = centeredLeft;
+        Top = centeredTop;
+        EnsureWindowOnScreen(screenBounds, windowWidth, windowHeight);
+    }
+
+    /// <summary>
+    /// Tests whether a window at the given position fits entirely within screen bounds.
+    /// </summary>
+    private static bool DoesWindowFitOnScreen(double left, double top, double width, double height, Rect screenBounds)
+    {
+        return left >= screenBounds.Left
+            && top >= screenBounds.Top
+            && left + width <= screenBounds.Right
+            && top + height <= screenBounds.Bottom;
+    }
+
+    /// <summary>
+    /// Ensures the window is fully visible on screen by clamping position to screen bounds.
+    /// This is the final safety net - it adjusts the window position to guarantee full visibility.
+    /// </summary>
+    private void EnsureWindowOnScreen(Rect screenBounds, double windowWidth, double windowHeight)
+    {
+        // Clamp Left to keep window within horizontal bounds
+        if (Left + windowWidth > screenBounds.Right)
+        {
+            Left = screenBounds.Right - windowWidth;
+        }
         if (Left < screenBounds.Left)
         {
             Left = screenBounds.Left;
         }
         
-        // Adjust Top if window extends beyond top edge
+        // Clamp Top to keep window within vertical bounds
+        if (Top + windowHeight > screenBounds.Bottom)
+        {
+            Top = screenBounds.Bottom - windowHeight;
+        }
         if (Top < screenBounds.Top)
         {
             Top = screenBounds.Top;
         }
     }
 
+    /// <summary>
+    /// Centers the window on the screen containing the cursor.
+    /// Used as a fallback for tray icon clicks and similar scenarios.
+    /// </summary>
     private void PositionWindowCenterScreen()
     {
         try
         {
             // Get cursor position to determine which screen to use
-            var cursorPos = System.Windows.Forms.Cursor.Position;
+            GetCursorPos(out var cursorPos);
             var screenBounds = GetScreenWorkingArea(cursorPos.X, cursorPos.Y);
-            Left = (screenBounds.Width - Width) / 2 + screenBounds.Left;
-            Top = (screenBounds.Height - Height) / 2 + screenBounds.Top;
+            var config = _configService?.Config;
+            double windowWidth = config != null && config.WindowWidth > 0 ? config.WindowWidth : Width;
+            double windowHeight = config != null && config.WindowHeight > 0 ? config.WindowHeight : Height;
+            Left = (screenBounds.Width - windowWidth) / 2 + screenBounds.Left;
+            Top = (screenBounds.Height - windowHeight) / 2 + screenBounds.Top;
         }
         catch
         {

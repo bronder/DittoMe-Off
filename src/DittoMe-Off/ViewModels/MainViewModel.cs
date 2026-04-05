@@ -182,14 +182,14 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task CopyItem(ClipboardItem? item)
+    private Task CopyItem(ClipboardItem? item)
     {
-        if (item == null) return;
+        if (item == null) return Task.CompletedTask;
 
+        _clipboardMonitor.Stop();
+        
         try
         {
-            _clipboardMonitor.Stop();
-            
             switch (item.ContentType)
             {
                 case ContentType.Text:
@@ -215,11 +215,29 @@ public partial class MainViewModel : ObservableObject
                     break;
             }
         }
-        finally
+        catch (Exception ex)
         {
-            // Restart monitoring after a short delay using proper async/await
+            System.Diagnostics.Debug.WriteLine($"CopyItem failed: {ex.Message}");
+        }
+
+        // Restart monitoring after a short delay (fire-and-forget)
+        // The clipboard copy is already complete at this point, so callers
+        // can safely paste immediately without waiting for monitoring to restart.
+        _ = RestartMonitoringAsync();
+
+        return Task.CompletedTask;
+    }
+
+    private async Task RestartMonitoringAsync()
+    {
+        try
+        {
             await Task.Delay(500);
             Application.Current?.Dispatcher.Invoke(() => _clipboardMonitor.Start());
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to restart clipboard monitoring: {ex.Message}");
         }
     }
 
@@ -439,6 +457,7 @@ public partial class MainViewModel : ObservableObject
                 AppConstants.FilterTypes.Sql => items.Where(i => i.FormatType == ContentFormatType.Sql).ToList(),
                 AppConstants.FilterTypes.Python => items.Where(i => i.FormatType == ContentFormatType.Python).ToList(),
                 AppConstants.FilterTypes.Shell => items.Where(i => i.FormatType == ContentFormatType.Bash || i.FormatType == ContentFormatType.PowerShell).ToList(),
+                AppConstants.FilterTypes.Url => items.Where(i => i.FormatType == ContentFormatType.Url).ToList(),
                 _ => items
             };
         }

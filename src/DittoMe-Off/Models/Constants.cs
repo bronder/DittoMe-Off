@@ -81,6 +81,7 @@ public static class AppConstants
         public const string Sql = "Sql";
         public const string Python = "Python";
         public const string Shell = "Shell";
+        public const string Url = "Url";
     }
 
     // SQL statements
@@ -109,6 +110,16 @@ public static class AppConstants
         public const string ClearItemsOlderThanAll = "DELETE FROM ClipboardItems WHERE Timestamp < @CutoffTime";
 
         public const string GetItemCount = "SELECT COUNT(*) FROM ClipboardItems";
+
+        public const string DeleteOldestExcessItems = @"
+            DELETE FROM ClipboardItems 
+            WHERE IsPinned = 0 
+            AND Id NOT IN (
+                SELECT Id FROM ClipboardItems 
+                WHERE IsPinned = 0 
+                ORDER BY Timestamp DESC 
+                LIMIT @KeepCount
+            )";
 
         public const string AlterTableAddFormatType = "ALTER TABLE ClipboardItems ADD COLUMN FormatType INTEGER DEFAULT 0";
     }

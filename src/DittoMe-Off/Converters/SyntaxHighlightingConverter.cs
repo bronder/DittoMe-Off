@@ -85,6 +85,10 @@ public class SyntaxHighlightingConverter : IMultiValueConverter
                 case ContentFormatType.HtmlCode:
                     HighlightXml(content, paragraph, searchText);
                     break;
+                case ContentFormatType.Url:
+                    // URLs display as plain text (no syntax highlighting needed)
+                    HighlightTextWithSearch(content, paragraph, textBrush, accentBrush, searchText);
+                    break;
                 default:
                     // For other code types, use generic highlighting
                     if (IsCodeFormat(formatType))
