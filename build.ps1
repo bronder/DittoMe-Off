@@ -3,7 +3,7 @@
 
 param(
     [string]$Configuration = "Release",
-    [string]$Version = "1.7.1",
+    [string]$Version = "",
     [switch]$BumpVersion
 )
 
@@ -12,6 +12,17 @@ $ErrorActionPreference = "Stop"
 $projectDir = $PSScriptRoot
 $srcDir = Join-Path $projectDir "src\DittoMe-Off"
 $csprojPath = Join-Path $srcDir "DittoMeOff.csproj"
+
+# If Version not provided, read from csproj file
+if ([string]::IsNullOrEmpty($Version)) {
+    $csprojContent = Get-Content $csprojPath -Raw
+    if ($csprojContent -match '<Version>([\d.]+)</Version>') {
+        $Version = $Matches[1]
+    } else {
+        Write-Host "Error: Could not find version in csproj" -ForegroundColor Red
+        exit 1
+    }
+}
 $readmePath = Join-Path $projectDir "README.md"
 $releasePath = Join-Path $projectDir "RELEASE.md"
 $outputDir = Join-Path $projectDir "output"
