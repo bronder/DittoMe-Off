@@ -1,3 +1,15 @@
+# Release v1.7.4
+
+## What's New
+
+### Smart Window Positioning
+- **Window appears near active window** - When you press the global hotkey, the clipboard manager now appears next to the window you were just using
+- **Smart placement** - Tries positions in order: right → below → left → above the active window
+- **DPI-aware** - Properly scales coordinates for high-DPI displays
+- **On-screen validation** - Ensures window stays visible within screen bounds
+
+---
+
 # Release v1.7.3
 
 ## Bug Fixes
