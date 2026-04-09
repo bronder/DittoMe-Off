@@ -17,6 +17,7 @@ public partial class MainWindow : Window
     private MainViewModel? _viewModel;
     private IHotkeyService? _hotkeyService;
     private IConfigService? _configService;
+    private IWindowPositionService? _windowPositionService;
     private bool _isExiting;
     private IntPtr _previousForegroundWindow = IntPtr.Zero;
 
@@ -100,11 +101,12 @@ public partial class MainWindow : Window
         InitializeComponent();
     }
 
-    public void Initialize(MainViewModel viewModel, IHotkeyService hotkeyService, IConfigService configService, IThemeService themeService)
+    public void Initialize(MainViewModel viewModel, IHotkeyService hotkeyService, IConfigService configService, IThemeService themeService, IWindowPositionService windowPositionService)
     {
         _viewModel = viewModel;
         _hotkeyService = hotkeyService;
         _configService = configService;
+        _windowPositionService = windowPositionService;
         DataContext = _viewModel;
 
         // Load the tray icon from the output directory
@@ -530,15 +532,15 @@ public partial class MainWindow : Window
         WindowStartupLocation = WindowStartupLocation.Manual;
 
         // Apply configured size using WPF properties (DIPs, not physical pixels).
-        // Do NOT use SetWindowPos with (int)Left/(int)Top here — those WPF values
-        // are in device-independent pixels but SetWindowPos expects physical pixels,
-        // which causes the window to drift toward (0,0) on DPI-scaled displays.
         var config = _configService?.Config;
         if (config != null)
         {
             if (config.WindowWidth > 0) Width = config.WindowWidth;
             if (config.WindowHeight > 0) Height = config.WindowHeight;
         }
+
+        // Position the window near the previously active window (the one that was active before the hotkey was pressed)
+        _windowPositionService?.PositionWindowNearWindow(this, _configService!, _previousForegroundWindow);
 
         Show();
         Activate();

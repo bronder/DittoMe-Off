@@ -25,9 +25,6 @@ internal static class NativeMethods
     internal static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
 
     [DllImport("user32.dll")]
-    internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr lpdwProcessId);
-
-    [DllImport("user32.dll")]
     internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
     [DllImport("kernel32.dll")]
@@ -35,6 +32,9 @@ internal static class NativeMethods
 
     [DllImport("user32.dll")]
     internal static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    internal static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
     // Keyboard input
     [DllImport("user32.dll")]
@@ -88,6 +88,15 @@ internal static class NativeMethods
     {
         public int X;
         public int Y;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct RECT
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
     }
 
     [StructLayout(LayoutKind.Sequential)]

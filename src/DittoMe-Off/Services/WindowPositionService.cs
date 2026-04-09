@@ -4,7 +4,7 @@ using System.Windows.Interop;
 
 namespace DittoMeOff.Services;
 
-public class WindowPositionService
+public class WindowPositionService : IWindowPositionService
 {
     private static readonly IntPtr HWND_TOP = IntPtr.Zero;
     private const uint SWP_NOZORDER = 0x0004;
@@ -13,8 +13,14 @@ public class WindowPositionService
     [DllImport("user32.dll")]
     private static extern bool GetCursorPos(out POINT lpPoint);
 
+    [DllImport("user32.dll")]
+    private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
     [StructLayout(LayoutKind.Sequential)]
     private struct POINT { public int X; public int Y; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
 
     public void PositionWindowAtCursor(Window window, IConfigService configService)
     {
@@ -94,6 +100,96 @@ public class WindowPositionService
         window.Height = height;
     }
 
+    /// <summary>
+    /// Positions the window near the target window (the window that was active before the hotkey was pressed).
+    /// Places the clipboard window to the right of the target window if possible,
+    /// otherwise below, with on-screen validation.
+    /// Note: GetWindowRect returns physical pixels, but WPF uses DIPs, so we need to scale.
+    /// </summary>
+    public void PositionWindowNearWindow(Window window, IConfigService configService, IntPtr targetWindowHandle)
+    {
+        var config = configService.Config;
+        double windowWidth = config.WindowWidth > 0 ? config.WindowWidth : window.Width;
+        double windowHeight = config.WindowHeight > 0 ? config.WindowHeight : window.Height;
+
+        // Default to cursor position if target window is invalid
+        GetCursorPos(out var cursorPos);
+
+        // Get the DPI scaling factor to convert physical pixels to DIPs
+        double dpiScale = GetDpiScale(window);
+
+        // Convert screen bounds from pixels to DIPs
+        var screenBoundsPixel = GetScreenWorkingArea(cursorPos.X, cursorPos.Y);
+        var screenBounds = new Rect(
+            screenBoundsPixel.Left / dpiScale,
+            screenBoundsPixel.Top / dpiScale,
+            screenBoundsPixel.Width / dpiScale,
+            screenBoundsPixel.Height / dpiScale);
+
+        if (targetWindowHandle != IntPtr.Zero && GetWindowRect(targetWindowHandle, out RECT targetRect))
+        {
+            // Convert physical pixel coordinates to DIPs
+            double targetLeftDips = targetRect.Left / dpiScale;
+            double targetTopDips = targetRect.Top / dpiScale;
+            double targetRightDips = targetRect.Right / dpiScale;
+            double targetBottomDips = targetRect.Bottom / dpiScale;
+
+            // Try to position to the right of the target window
+            double rightPos = targetRightDips + 10;
+            double topPos = targetTopDips;
+
+            if (DoesWindowFitOnScreen(rightPos, topPos, windowWidth, windowHeight, screenBounds))
+            {
+                window.Left = rightPos;
+                window.Top = topPos;
+                EnsureWindowOnScreen(window, screenBounds, windowWidth, windowHeight);
+                return;
+            }
+
+            // Try to position below the target window (aligned to left edge)
+            double belowLeft = targetLeftDips;
+            double belowTop = targetBottomDips + 10;
+
+            if (DoesWindowFitOnScreen(belowLeft, belowTop, windowWidth, windowHeight, screenBounds))
+            {
+                window.Left = belowLeft;
+                window.Top = belowTop;
+                EnsureWindowOnScreen(window, screenBounds, windowWidth, windowHeight);
+                return;
+            }
+
+            // Try to position to the left of the target window
+            double leftPos = targetLeftDips - windowWidth - 10;
+
+            if (DoesWindowFitOnScreen(leftPos, targetTopDips, windowWidth, windowHeight, screenBounds))
+            {
+                window.Left = leftPos;
+                window.Top = targetTopDips;
+                EnsureWindowOnScreen(window, screenBounds, windowWidth, windowHeight);
+                return;
+            }
+
+            // Try to position above the target window
+            double aboveTop = targetTopDips - windowHeight - 10;
+
+            if (DoesWindowFitOnScreen(targetLeftDips, aboveTop, windowWidth, windowHeight, screenBounds))
+            {
+                window.Left = targetLeftDips;
+                window.Top = aboveTop;
+                EnsureWindowOnScreen(window, screenBounds, windowWidth, windowHeight);
+                return;
+            }
+        }
+
+        // Fallback: position centered at cursor (convert cursor pos from pixels to DIPs)
+        double centeredLeft = (cursorPos.X / dpiScale) - (windowWidth / 2);
+        double centeredTop = (cursorPos.Y / dpiScale) - (windowHeight / 2);
+
+        window.Left = centeredLeft;
+        window.Top = centeredTop;
+        EnsureWindowOnScreen(window, screenBounds, windowWidth, windowHeight);
+    }
+
     private static bool DoesWindowFitOnScreen(double left, double top, double width, double height, Rect screenBounds)
     {
         return left >= screenBounds.Left
@@ -134,5 +230,19 @@ public class WindowPositionService
             targetScreen.WorkingArea.Top,
             targetScreen.WorkingArea.Width,
             targetScreen.WorkingArea.Height);
+    }
+
+    /// <summary>
+    /// Gets the DPI scaling factor for the window.
+    /// At 100% DPI (96 DPI), this returns 1.0. At 150% DPI (144 DPI), this returns 1.5, etc.
+    /// </summary>
+    private static double GetDpiScale(Window window)
+    {
+        var source = PresentationSource.FromVisual(window);
+        if (source?.CompositionTarget != null)
+        {
+            return source.CompositionTarget.TransformToDevice.M11;
+        }
+        return 1.0; // Default to no scaling if we can't determine the DPI
     }
 }

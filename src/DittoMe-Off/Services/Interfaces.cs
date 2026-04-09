@@ -42,3 +42,8 @@ public interface IThemeService
     void ApplyTheme(AppTheme theme);
     void LoadSavedTheme();
 }
+
+public interface IWindowPositionService
+{
+    void PositionWindowNearWindow(System.Windows.Window window, IConfigService configService, IntPtr targetWindowHandle);
+}

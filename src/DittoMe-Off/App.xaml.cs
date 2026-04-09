@@ -38,12 +38,13 @@ public partial class App : Application
         
         var clipboardMonitor = _serviceProvider.GetRequiredService<IClipboardMonitorService>();
         var hotkeyService = _serviceProvider.GetRequiredService<IHotkeyService>();
+        var windowPositionService = _serviceProvider.GetRequiredService<IWindowPositionService>();
         
         var mainViewModel = _serviceProvider.GetRequiredService<MainViewModel>();
 
         // Create and show main window
         var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
-        mainWindow.Initialize(mainViewModel, hotkeyService, configService, themeService);
+        mainWindow.Initialize(mainViewModel, hotkeyService, configService, themeService, windowPositionService);
         MainWindow = mainWindow;
         mainWindow.Show();
 
@@ -62,6 +63,7 @@ public partial class App : Application
         services.AddSingleton<IThemeService, ThemeService>();
         services.AddSingleton<IClipboardMonitorService, ClipboardMonitorService>();
         services.AddSingleton<IHotkeyService, HotkeyService>();
+        services.AddSingleton<IWindowPositionService, WindowPositionService>();
         
         // Register ViewModels
         services.AddSingleton<MainViewModel>();

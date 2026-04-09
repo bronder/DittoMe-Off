@@ -61,8 +61,8 @@ public class PasteService
             System.Diagnostics.Debug.WriteLine($"PasteToWindowAsync: attempting paste to window {targetWindow}");
 
             // Attach our thread input to the target window's thread so SetForegroundWindow works reliably
-            uint foregroundThreadId = NativeMethods.GetWindowThreadProcessId(NativeMethods.GetForegroundWindow(), IntPtr.Zero);
-            uint targetThreadId = NativeMethods.GetWindowThreadProcessId(targetWindow, IntPtr.Zero);
+            uint foregroundThreadId = NativeMethods.GetWindowThreadProcessId(NativeMethods.GetForegroundWindow(), out _);
+            uint targetThreadId = NativeMethods.GetWindowThreadProcessId(targetWindow, out _);
             uint currentThreadId = NativeMethods.GetCurrentThreadId();
 
             bool attached = false;
