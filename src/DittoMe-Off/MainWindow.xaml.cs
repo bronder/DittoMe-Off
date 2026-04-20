@@ -525,6 +525,12 @@ public partial class MainWindow : Window
 
     private void ShowWindow()
     {
+        // Clear the search bar when bringing up the window
+        if (_viewModel != null)
+        {
+            _viewModel.SearchText = string.Empty;
+        }
+        
         // Reset window state before showing
         WindowState = WindowState.Normal;
         

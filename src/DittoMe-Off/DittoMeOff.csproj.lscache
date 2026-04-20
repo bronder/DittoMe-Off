@@ -98,7 +98,7 @@ ViewModels/
  ViewModelBase.cs
 
 [metadataReferences]
-../../../../../Program Files/dotnet/packs/Microsoft.NETCore.App.Ref/10.0.4/ref/net10.0/
+<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.6/ref/net10.0/
  Microsoft.CSharp.dll
  Microsoft.VisualBasic.Core.dll
  Microsoft.Win32.Primitives.dll
@@ -263,7 +263,7 @@ ViewModels/
  System.Xml.XmlSerializer.dll
  System.Xml.XPath.dll
  System.Xml.XPath.XDocument.dll
-../../../../../Program Files/dotnet/packs/Microsoft.WindowsDesktop.App.Ref/10.0.4/ref/net10.0/
+<DOTNET>/packs/Microsoft.WindowsDesktop.App.Ref/10.0.6/ref/net10.0/
  Accessibility.dll
  Microsoft.VisualBasic.dll
  Microsoft.VisualBasic.Forms.dll
@@ -327,19 +327,19 @@ ViewModels/
  sqlitepclraw.provider.e_sqlite3/2.1.6/lib/net6.0-windows7.0/SQLitePCLRaw.provider.e_sqlite3.dll
 
 [analyzerReferences]
-../../../../../Program Files/dotnet/packs/Microsoft.NETCore.App.Ref/10.0.4/analyzers/dotnet/cs/
+<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.6/analyzers/dotnet/cs/
  Microsoft.Interop.ComInterfaceGenerator.dll
  Microsoft.Interop.JavaScript.JSImportGenerator.dll
  Microsoft.Interop.LibraryImportGenerator.dll
  Microsoft.Interop.SourceGeneration.dll
  System.Text.Json.SourceGeneration.dll
  System.Text.RegularExpressions.Generator.dll
-../../../../../Program Files/dotnet/packs/Microsoft.WindowsDesktop.App.Ref/10.0.4/analyzers/dotnet/cs/
+<DOTNET>/packs/Microsoft.WindowsDesktop.App.Ref/10.0.6/analyzers/dotnet/cs/
  System.Windows.Forms.Analyzers.CodeFixes.CSharp.dll
  System.Windows.Forms.Analyzers.CSharp.dll
-../../../../../Program Files/dotnet/
- packs/Microsoft.WindowsDesktop.App.Ref/10.0.4/analyzers/dotnet/System.Windows.Forms.Analyzers.dll
- sdk/10.0.104/Sdks/Microsoft.NET.Sdk/analyzers/
+<DOTNET>/
+ packs/Microsoft.WindowsDesktop.App.Ref/10.0.6/analyzers/dotnet/System.Windows.Forms.Analyzers.dll
+ sdk/10.0.106/Sdks/Microsoft.NET.Sdk/analyzers/
   Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
   Microsoft.CodeAnalysis.NetAnalyzers.dll
 <NUGET>/communitytoolkit.mvvm/8.2.2/analyzers/dotnet/roslyn4.3/cs/
@@ -347,5 +347,5 @@ ViewModels/
  CommunityToolkit.Mvvm.SourceGenerators.dll
 
 [analyzerConfigFiles]
-../../../../../Program Files/dotnet/sdk/10.0.104/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_10_default.globalconfig
+<DOTNET>/sdk/10.0.106/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_10_default.globalconfig
 obj/Debug/net10.0-windows/DittoMeOff.GeneratedMSBuildEditorConfig.editorconfig
