@@ -245,4 +245,44 @@ public class WindowPositionService : IWindowPositionService
         }
         return 1.0; // Default to no scaling if we can't determine the DPI
     }
+
+    /// <summary>
+    /// Positions the window centered horizontally at the top of the screen with a 100px buffer.
+    /// </summary>
+    public void PositionWindowAtTopCenter(Window window, IConfigService configService)
+    {
+        try
+        {
+            GetCursorPos(out var cursorPos);
+            var config = configService.Config;
+            double windowWidth = config.WindowWidth > 0 ? config.WindowWidth : window.Width;
+            double windowHeight = config.WindowHeight > 0 ? config.WindowHeight : window.Height;
+
+            // Get the DPI scaling factor to convert physical pixels to DIPs
+            double dpiScale = GetDpiScale(window);
+
+            // Convert screen bounds from pixels to DIPs
+            var screenBoundsPixel = GetScreenWorkingArea(cursorPos.X, cursorPos.Y);
+            var screenBounds = new Rect(
+                screenBoundsPixel.Left / dpiScale,
+                screenBoundsPixel.Top / dpiScale,
+                screenBoundsPixel.Width / dpiScale,
+                screenBoundsPixel.Height / dpiScale);
+
+            // Position centered horizontally, with 100px buffer from top
+            const double TopBuffer = 100;
+            window.Left = (screenBounds.Width - windowWidth) / 2 + screenBounds.Left;
+            window.Top = screenBounds.Top + TopBuffer;
+
+            // Ensure window fits on screen (height might exceed available space)
+            EnsureWindowOnScreen(window, screenBounds, windowWidth, windowHeight);
+        }
+        catch
+        {
+            // Fallback: use WPF's built-in positioning
+            window.Left = double.NaN;
+            window.Top = double.NaN;
+            window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        }
+    }
 }

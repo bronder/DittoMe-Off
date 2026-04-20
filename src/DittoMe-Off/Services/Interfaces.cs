@@ -46,4 +46,5 @@ public interface IThemeService
 public interface IWindowPositionService
 {
     void PositionWindowNearWindow(System.Windows.Window window, IConfigService configService, IntPtr targetWindowHandle);
+    void PositionWindowAtTopCenter(System.Windows.Window window, IConfigService configService);
 }

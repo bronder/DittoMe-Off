@@ -545,8 +545,8 @@ public partial class MainWindow : Window
             if (config.WindowHeight > 0) Height = config.WindowHeight;
         }
 
-        // Position the window near the previously active window (the one that was active before the hotkey was pressed)
-        _windowPositionService?.PositionWindowNearWindow(this, _configService!, _previousForegroundWindow);
+        // Position the window at the top center of the screen with 100px buffer
+        _windowPositionService?.PositionWindowAtTopCenter(this, _configService!);
 
         Show();
         Activate();
