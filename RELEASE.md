@@ -1,3 +1,15 @@
+# Release v1.7.5
+
+## What's New
+
+### Top-Center Window Positioning
+- **Window appears at top-center** - When you press the global hotkey, the clipboard manager now appears centered horizontally at the top of the screen
+- **100px buffer from top** - Window is positioned 100 pixels from the top edge of the screen
+- **DPI-aware** - Properly scales coordinates for high-DPI displays
+- **On-screen validation** - Ensures window stays visible within screen bounds
+
+---
+
 # Release v1.7.4
 
 ## What's New
